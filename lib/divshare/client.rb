@@ -37,8 +37,6 @@ module Divshare
     end
 
     def call_method(method, args)
-      # url = request_url(method, args)
-      # response = Hpricot(http_post(url))
       response = Hpricot(http_post(method, args))
       puts "Error: " + response.at('error').inner_html if response.at('response')[:status] == "0"
       response
@@ -55,16 +53,6 @@ module Divshare
       response = call_method('logout', {}).at(:response)
       response.at(:logged_out) ? response.at(:logged_out).inner_html == 'true' : false
     end
-
-    # def request_url(method, args)
-    #   api_sig = sign(method, args)
-    #   puts "Signed: #{api_sig}"
-    #   post_string = "?method=#{method}&api_key=#{@api_key}"
-    #   post_string << "&api_session_key=#{@api_session_key}&api_sig=#{api_sig}" unless method == 'login'
-    #   args.delete_if { |k,v| v.nil? }
-    #   post_string << args.inject("") { |list, (k,v)| list << "&#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}" } unless args.empty? || args.nil?
-    #   url = "#{@post_url}#{post_string}"
-    # end
 
     # From http://www.divshare.com/integrate/api
     #
@@ -93,19 +81,10 @@ module Divshare
         args.merge!({'api_session_key' => @api_session_key, 'api_sig' => api_sig})
       end
       args
-      # string = "method=#{method}&api_key=#{api_key}"
-      #  string << "&api_session_key=#{@api_session_key}&api_sig=#{sign(method, args)}" if @api_session_key
-      #  string << "&" + args.collect {|k,v| k.to_s+'='+v }.join("&") unless args.nil?
      end
 
     def http_post(method, args)
       url = URI.parse(@post_url)
-      # req = Net::HTTP::Post.new(url.path)
-      # req.set_form_data(post_string(args), ';')
-      # response = Net::HTTP.start(url.host, url.port) do |http|
-      #   puts url.path, post_string(method, args)
-      #   http.post(url.path, post_string(method, args)).body.to_s
-      # end
       Net::HTTP.post_form(url, post_args(method, args)).body
     end
   end
