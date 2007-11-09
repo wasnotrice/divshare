@@ -10,17 +10,18 @@ module Divshare
     SUCCESS = '1'
     FAILURE = '0'
   
-    attr_reader :api_key, :api_secret, :post_url, :api_session_key, :username, :password
+    attr_reader :api_key, :api_secret, :post_url, :api_session_key, :email, :password
 
-    def initialize(api_key, api_secret, username=nil, password=nil)
-      @api_key, @api_secret, @username, @password = api_key, api_secret, username, password
+    def initialize(api_key, api_secret, email=nil, password=nil)
+      @api_key, @api_secret, @email, @password = api_key, api_secret, email, password
+      @api_session_key = nil
       @post_url = "http://www.divshare.com/api/"
     end
 
     # file_ids should be an array of file ids
     def files(file_ids)
       file_ids = [file_ids] unless file_ids.respond_to?(:join)
-      response = get_files(:files => file_ids.join(','))
+      response = get_files('files' => file_ids.join(','))
       files_from(response)
     end
 
@@ -38,16 +39,26 @@ module Divshare
       files_from response
     end
 
-    def login(username=nil, password=nil)
-      username ||= @username
+    def login(email=nil, password=nil)
+      logout if @api_session_key
+      email ||= @email
       password ||= @password
-      xml = send_method(:login, {:username => username, :password => password})
-      @api_session_key = xml.at(:api_session_key).inner_html
+      response = send_method('login', {'user_email' => email, 'user_password' => password})
+      if response.at(:api_session_key)
+        @api_session_key = response.at(:api_session_key).inner_html
+      else
+        raise "Couldn't log in. Received: \n" + response.to_s
+      end
     end
 
     def logout
       response = send_method('logout', {})
-      response.at(:logged_out).inner_html == 'true' if response.at(:logged_out)
+      if response.at(:logged_out) && response.at(:logged_out).inner_html == 'true' 
+        @api_session_key = nil
+      else
+        raise "Couldn't log out. Received: \n" + response.to_s
+      end
+      true
     end
 
     def sign(method, args)
@@ -71,7 +82,12 @@ module Divshare
     # Since login and logout aren't easily re-nameable to use method missing
     def send_method(method_id, *params)
       response = http_post(method_id.to_s, *params)
-      Hpricot(response).at(:response)
+      xml = Hpricot(response).at(:response)
+      if xml[:status] == FAILURE
+        errors = xml/:error
+        raise errors.to_s
+      end
+      xml
     end      
     
     def http_post(method, args)

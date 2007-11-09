@@ -6,8 +6,12 @@ module DivshareClientSpecHelper
     Divshare::Client.new('api_key', 'api_secret')
   end
 
-  def new_client_with_username_and_password
-    Divshare::Client.new('api_key', 'api_secret', 'username', 'password')
+  def new_client_with_email_and_password
+    Divshare::Client.new('api_key', 'api_secret', 'email', 'password')
+  end
+  
+  def basic_post_args(to_merge={})
+    {'api_key' => 'api_key', "api_sig" => @api_sig, "api_session_key" => @api_session_key}.merge(to_merge)
   end
   
   # From http://www.divshare.com/integrate/api
@@ -64,6 +68,15 @@ module DivshareClientSpecHelper
     EOS
   end
   
+  def login_xml
+    <<-EOS
+    <?xml version="1.0" encoding="UTF-8"?>
+    <response status="1">
+        <api_session_key>123-abcdefghijkl</api_session_key>
+    </response>
+    EOS
+  end
+  
 end
 
 describe "A new Divshare Client" do
@@ -73,13 +86,13 @@ describe "A new Divshare Client" do
     new_client.should be_instance_of(Divshare::Client)
   end
   
-  it "should be created with api key, api_secret, username, and password" do
-    new_client_with_username_and_password.should be_instance_of(Divshare::Client)
+  it "should be created with api key, api_secret, email, and password" do
+    new_client_with_email_and_password.should be_instance_of(Divshare::Client)
   end
   
-  it "should assign api key, api_secret, username, and password correctly" do
-    client = new_client_with_username_and_password
-    [client.api_key, client.api_secret, client.username, client.password].should == ['api_key', 'api_secret', 'username', 'password']
+  it "should assign api key, api_secret, email, and password correctly" do
+    client = new_client_with_email_and_password
+    [client.api_key, client.api_secret, client.email, client.password].should == ['api_key', 'api_secret', 'email', 'password']
   end
   
   it "should know the proper post url" do
@@ -100,7 +113,7 @@ describe "A Divshare Client" do
   end
 
   it "should generate proper arguments for post" do
-    @client.post_args("get_files", {"files" => @file_id}).should == {"method" => "get_files", "files" => @file_id, 'api_key' => 'api_key', "api_sig" => @api_sig, "api_session_key" => @api_session_key}
+    @client.post_args("get_files", {"files" => @file_id}).should == basic_post_args({"method" => "get_files", "files" => @file_id})
   end
   
   # Working from 'api_secret123-abcdefghijklfiles2192839-522'
@@ -121,5 +134,21 @@ describe "A Divshare Client" do
     mock_response.should_receive(:body).and_return(get_two_files_xml)
     @client.files(['bogus_file_id', 'other']).map {|f| f.class}.should == [Divshare::File, Divshare::File]
   end
+end
+
+describe "A Divshare Client, not logged in" do
+  include DivshareClientSpecHelper
+  before(:each) do
+    @client = new_client_with_email_and_password
+    @file_id = '2192839-522'
+    @api_sig = '0070db55f389a6fe16ec150777363d4d'
+  end
+  it "should generate proper arguments for login" do
+    mock_response = mock('response')
+    Net::HTTP.should_receive(:post_form).with(URI.parse(@client.post_url), {"method" => "login", "user_email" => 'email', 'user_password' => 'password', 'api_key' => 'api_key'}).and_return(mock_response)
+    mock_response.should_receive(:body).and_return(login_xml)
+    @client.login
+  end
+  
 end
 
