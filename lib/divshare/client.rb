@@ -18,13 +18,14 @@ module Divshare
     end
 
     # file_ids should be an array of file ids
-    def get_files(file_ids)
+    def files(file_ids)
       file_ids = [file_ids] unless file_ids.respond_to?(:join)
-      args = {'files' => file_ids.join(',')}
-      files_from(call_method('get_files', args).at(:response)/:file)
+      response = get_files(:files => file_ids.join(','))
+      files_from(response)
     end
 
     def files_from(xml)
+      xml = xml/:file
       xml = [xml] unless xml.respond_to?(:each)    
       files = xml.collect { |f| Divshare::File.new f }
     end
@@ -33,27 +34,51 @@ module Divshare
       args = {}
       args['limit'] = limit unless limit.nil?
       args['offset'] = offset unless offset.nil?
-      files_from(call_method('get_user_files', args).at(:response)/:file)
-    end
-
-    def call_method(method, args)
-      response = Hpricot(http_post(method, args))
-      puts "Error: " + response.at('error').inner_html if response.at('response')[:status] == "0"
-      response
+      response = get_user_files(args)
+      files_from response
     end
 
     def login(username=nil, password=nil)
       username ||= @username
       password ||= @password
-      xml = call_method('login', {:username => username, :password => password})
-      @api_session_key = xml.at("response api_session_key").inner_html
+      xml = send_method(:login, {:username => username, :password => password})
+      @api_session_key = xml.at(:api_session_key).inner_html
     end
 
     def logout
-      response = call_method('logout', {}).at(:response)
-      response.at(:logged_out) ? response.at(:logged_out).inner_html == 'true' : false
+      response = send_method('logout', {})
+      response.at(:logged_out).inner_html == 'true' if response.at(:logged_out)
     end
 
+    def sign(method, args)
+      Digest::MD5.hexdigest(string_to_sign(args))
+    end
+
+    def post_args(method, args)
+      args.merge!({'method' => method, 'api_key' => @api_key})
+      if @api_session_key
+        api_sig = sign(method, args)
+        args.merge!({'api_session_key' => @api_session_key, 'api_sig' => api_sig})
+      end
+      args
+    end
+
+    private
+    def method_missing(method_id, *params)
+      send_method(method_id, *params)
+    end
+    
+    # Since login and logout aren't easily re-nameable to use method missing
+    def send_method(method_id, *params)
+      response = http_post(method_id.to_s, *params)
+      Hpricot(response).at(:response)
+    end      
+    
+    def http_post(method, args)
+      url = URI.parse(@post_url)
+      Net::HTTP.post_form(url, post_args(method, args)).body
+    end
+    
     # From http://www.divshare.com/integrate/api
     #
     # * Your secret key is 123-secret. 
@@ -68,24 +93,6 @@ module Divshare
     def string_to_sign(args)
       args_for_string = args.dup.delete_if {|k,v| %w(api_key method api_sig api_session_key).include?(k) }
       "#{@api_secret}#{@api_session_key}#{args_for_string.to_a.sort.flatten.join}"
-    end
-
-    def sign(method, args)
-      Digest::MD5.hexdigest(string_to_sign(args))
-    end
-
-    def post_args(method, args)
-      args.merge!({'method' => method, 'api_key' => @api_key})
-      if @api_session_key
-        api_sig = sign(method, args)
-        args.merge!({'api_session_key' => @api_session_key, 'api_sig' => api_sig})
-      end
-      args
-     end
-
-    def http_post(method, args)
-      url = URI.parse(@post_url)
-      Net::HTTP.post_form(url, post_args(method, args)).body
     end
   end
 end
