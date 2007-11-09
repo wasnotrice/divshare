@@ -37,22 +37,20 @@ describe "A Divshare Client" do
   before(:each) do
     @client = new_client
     # Intercept calls to #login and set @api_session_key manually
-    @client.stub!(:login).and_return("123-abcdefghijkl")
+    @api_session_key = '123-abcdefghijkl'
+    @client.stub!(:login).and_return(@api_session_key)
     @client.instance_variable_set(:@api_session_key, @client.login)
     @file_id = '2192839-522'
+    @api_sig = '0070db55f389a6fe16ec150777363d4d'
   end
 
-  it "should generate a good post string" do
-    @client.post_args("get_files", {"files" => @file_id}).should == ""
+  it "should generate proper arguments for post" do
+    @client.post_args("get_files", {"files" => @file_id}).should == {"method" => "get_files", "files" => @file_id, 'api_key' => 'api_key', "api_sig" => @api_sig, "api_session_key" => @api_session_key}
   end
   
   # Working from 'api_secret123-abcdefghijklfiles2192839-522'
   it "should generate a correct signature" do
-    @client.sign("get_files", {"files" => @file_id}).should == "0070db55f389a6fe16ec150777363d4d"
-  end
-  
-  it "should generate a string to sign that matches the one from the php library" do
-    @client.string_to_sign("files" => @file_id).should == "8e67d3475573206-1e74e823c993files2092839-522"
+    @client.sign("get_files", {"files" => @file_id}).should == @api_sig
   end
 end
 
