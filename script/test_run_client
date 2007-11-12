@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+$:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
+require 'divshare'
+include Divshare
+
+puts "Email: "
+email = gets
+puts "API key: "
+api_key = gets
+
+client = Client.new(:email => email, :api_key => api_key)
