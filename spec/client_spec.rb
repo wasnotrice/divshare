@@ -188,7 +188,6 @@ describe "A Divshare Client, logging in" do
     @client.login
     @client.api_session_key.should == @api_session_key
   end
-  
 end
 
 describe "A Divshare Client, logging out" do
