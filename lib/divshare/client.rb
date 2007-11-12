@@ -25,12 +25,6 @@ module Divshare
       files_from(response)
     end
 
-    def files_from(xml)
-      xml = xml/:file
-      xml = [xml] unless xml.respond_to?(:each)    
-      files = xml.collect { |f| Divshare::File.new f }
-    end
-
     def get_user_files(limit=nil, offset=nil)
       args = {}
       args['limit'] = limit unless limit.nil?
@@ -43,7 +37,7 @@ module Divshare
       logout if @api_session_key
       email ||= @email
       password ||= @password
-      response = send_method('login', {'user_email' => email, 'user_password' => password})
+      response = send_method(:login, {'user_email' => email, 'user_password' => password})
       if response.at(:api_session_key)
         @api_session_key = response.at(:api_session_key).inner_html
       else
@@ -52,7 +46,7 @@ module Divshare
     end
 
     def logout
-      response = send_method('logout', {})
+      response = send_method(:logout, {})
       if response.at(:logged_out) && response.at(:logged_out).inner_html == 'true' 
         @api_session_key = nil
       else
@@ -66,13 +60,21 @@ module Divshare
     end
 
     private
+    def files_from(xml)
+      xml = xml/:file
+      xml = [xml] unless xml.respond_to?(:each)    
+      files = xml.collect { |f| Divshare::File.new f }
+    end
+
     def method_missing(method_id, *params)
       send_method(method_id, *params)
     end
     
     # Since login and logout aren't easily re-nameable to use method missing
     def send_method(method_id, *params)
-      response = http_post(method_id.to_s, *params)
+      pp method_id
+      pp params
+      response = http_post(method_id, *params)
       xml = Hpricot(response).at(:response)
       if xml[:status] == FAILURE
         errors = xml/:error
@@ -85,7 +87,7 @@ module Divshare
       PostArgs.new(self, method, args)
     end
     
-    def http_post(method, args)
+    def http_post(method, args={})
       url = URI.parse(@post_url)
       Net::HTTP.post_form(url, post_args(method, args)).body
     end

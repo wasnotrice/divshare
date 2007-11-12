@@ -8,8 +8,7 @@ module Divshare
         api_sig = client.sign(method, post_args)
         post_args.merge!({'api_session_key' => client.api_session_key, 'api_sig' => api_sig})
       end
-      post_args.each { |k,v| self[k.to_s] = v }
-      self
+      post_args.each { |k,v| self[k.to_s] = v.to_s }
     end
 
     

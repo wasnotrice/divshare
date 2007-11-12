@@ -100,6 +100,39 @@ describe "A new Divshare Client" do
   end 
 end
 
+describe "A Divshare Client getting one file" do
+  include DivshareClientSpecHelper
+  before(:each) do
+    @client = new_client
+    # Intercept calls to #login and set @api_session_key manually
+    @api_session_key = '123-abcdefghijkl'
+    @client.stub!(:login).and_return(@api_session_key)
+    @client.instance_variable_set(:@api_session_key, @client.login)
+    @file_id = '2192839-522'
+    @api_sig = '0070db55f389a6fe16ec150777363d4d'
+    @mock_response = mock('response')
+    Net::HTTP.stub!(:post_form).and_return(@mock_response)
+  end
+
+  # If it generates a PostArgs object, it's doing the right thing
+  it "should generate arguments for post" do
+    @mock_response.should_receive(:body).and_return(get_one_file_xml)
+    PostArgs.should_receive(:new).with(@client,:get_files,{'files' => @file_id})
+    @client.files(@file_id)
+  end
+  
+  # Working from 'api_secret123-abcdefghijklfiles2192839-522'
+  it "should generate a correct signature" do
+    @client.sign("get_files", {"files" => @file_id}).should == @api_sig
+  end
+  
+  it "should return an array of one Divshare::File when requesting a file" do
+    @mock_response.should_receive(:body).and_return(get_one_file_xml)
+    @client.files('bogus_file_id').map {|f| f.class}.should == [Divshare::File]
+  end
+  
+end
+
 describe "A Divshare Client" do
   include DivshareClientSpecHelper
   before(:each) do
@@ -112,22 +145,6 @@ describe "A Divshare Client" do
     @api_sig = '0070db55f389a6fe16ec150777363d4d'
   end
 
-  it "should generate proper arguments for post" do
-    @client.post_args("get_files", {"files" => @file_id}).should == basic_post_args({"method" => "get_files", "files" => @file_id})
-  end
-  
-  # Working from 'api_secret123-abcdefghijklfiles2192839-522'
-  it "should generate a correct signature" do
-    @client.sign("get_files", {"files" => @file_id}).should == @api_sig
-  end
-  
-  it "should return an array of one Divshare::File when requesting a file" do
-    mock_response = mock('response')
-    Net::HTTP.stub!(:post_form).and_return(mock_response)
-    mock_response.should_receive(:body).and_return(get_one_file_xml)
-    @client.files('bogus_file_id').map {|f| f.class}.should == [Divshare::File]
-  end
-  
   it "should return an array of two Divshare::Files when requesting two files" do
     mock_response = mock('response')
     Net::HTTP.stub!(:post_form).and_return(mock_response)

@@ -26,10 +26,15 @@ describe "A PostArgs" do
     PostArgs.new(@client,'login',@login).should == login_args(@login)
   end
   
-  it "should work with keys passed in as strings or hashes" do
+  it "should convert symbol keys to strings" do
     @client.should_receive(:api_session_key).and_return(nil)
     symbol_keys = {}
     @login.each { |k,v| symbol_keys[k.to_sym] = v }
     PostArgs.new(@client,'login',symbol_keys).should == login_args(@login)
+  end
+  
+  it "should convert symbol values to strings" do
+    @client.should_receive(:api_session_key).and_return(nil)
+    PostArgs.new(@client,:login,@login).should == login_args(@login)
   end
 end
