@@ -89,7 +89,7 @@ module ClientSpecHelper
     <<-EOS
     <?xml version="1.0" encoding="UTF-8"?>
     <response status="1">
-        <logged_out>1</logged_out>
+        <logged_out>true</logged_out>
     </response>
     EOS
   end
@@ -194,9 +194,11 @@ describe "A Divshare Client, logging out" do
   include ClientSpecHelper
   before(:each) do
     @client = new_client_with_email_and_password
-    login(@client)
+    @api_session_key = login(@client)
+    @api_sig = 'api_sig'
+    @client.stub!(:sign).and_return(@api_sig)
     mock_response = mock(:response)
-    Net::HTTP.should_receive(:post_form).with(URI.parse(@client.post_url), {'method' => 'logout', "api_key" => 'api_key'}).and_return(mock_response)
+    Net::HTTP.should_receive(:post_form).with(URI.parse(@client.post_url), basic_post_args({'method' => 'logout', 'api_sig' => 'api_sig'})).and_return(mock_response)
     mock_response.should_receive(:body).and_return(logout_xml)
   end
 

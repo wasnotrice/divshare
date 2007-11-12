@@ -3,9 +3,35 @@ $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 require 'divshare'
 include Divshare
 
-puts "Email: "
-email = gets
-puts "API key: "
-api_key = gets
+if ARGV.length > 1
+  puts "Usage: divshare_test_run [config.yml]" 
+  exit(0)
+end
 
-client = Client.new(:email => email, :api_key => api_key)
+config = {}
+if ARGV.length == 1
+  config = YAML.load(File.open(ARGV[0]))
+else  
+  print "API key: "
+  config[:api_key] = gets
+  print "API secret: "
+  config[:api_secret] = gets
+  print "Email: "
+  config[:email] = gets
+  print "Password (will show up on screen): "
+  config[:password]= gets
+end
+client = Client.new(config["api_key"], config["api_secret"], config["email"], config["password"])
+client.login
+puts "Logged in successfully."
+puts "API session key: #{client.api_session_key}"
+
+client.logout
+if client.api_session_key
+  puts "Error logging out."
+else
+  puts "Logged out successfully."
+end
+  
+
+

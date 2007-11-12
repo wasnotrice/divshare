@@ -41,16 +41,16 @@ module Divshare
       if response.at(:api_session_key)
         @api_session_key = response.at(:api_session_key).inner_html
       else
-        raise "Couldn't log in. Received: \n" + response.to_s
+        raise_error "Divshare error: Couldn't log in. Received: \n" + response.to_s
       end
     end
 
     def logout
       response = send_method(:logout)
-      if response.at(:logged_out) && response.at(:logged_out).inner_html == SUCCESS 
+      if response.at(:logged_out) && (%w(true 1).include? response.at(:logged_out).inner_html)
         @api_session_key = nil
       else
-        raise "Couldn't log out. Received: \n" + response.to_s
+        raise_error "Divshare error: Couldn't log out. Received: \n" + response.to_s
       end
       true
     end
@@ -60,6 +60,11 @@ module Divshare
     end
 
     private
+    def raise_error(error)
+      raise error
+      exit(0)
+    end
+    
     def files_from(xml)
       xml = xml/:file
       xml = [xml] unless xml.respond_to?(:each)    
@@ -75,8 +80,8 @@ module Divshare
       response = http_post(method_id, *params)
       xml = Hpricot(response).at(:response)
       if xml[:status] == FAILURE
-        errors = xml/:error
-        raise errors.to_s
+        errors = (xml/:error).collect {|e| e.inner_html}
+        raise_error "Divshare error: " + errors.join("\n")
       end
       xml
     end      

@@ -35,8 +35,9 @@ describe "A PostArgs" do
   end
   
   it "should generate appropriate arguments for logout" do
-    @client.should_receive(:api_session_key).and_return('123-abcdefghijkl')
-    PostArgs.new(@client,:logout,{}).should == logout_args
+    @client.should_receive(:api_session_key).twice.and_return('api_session_key')
+    @client.should_receive(:sign).and_return('api_sig')
+    PostArgs.new(@client,:logout,{}).should == basic_args({'method' => 'logout'})
   end
   
   it "should convert symbol keys to strings" do
