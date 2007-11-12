@@ -65,15 +65,6 @@ module Divshare
       Digest::MD5.hexdigest(string_to_sign(args))
     end
 
-    def post_args(method, args)
-      args.merge!({'method' => method, 'api_key' => @api_key})
-      if @api_session_key
-        api_sig = sign(method, args)
-        args.merge!({'api_session_key' => @api_session_key, 'api_sig' => api_sig})
-      end
-      args
-    end
-
     private
     def method_missing(method_id, *params)
       send_method(method_id, *params)
@@ -89,6 +80,10 @@ module Divshare
       end
       xml
     end      
+    
+    def post_args(method, args)
+      PostArgs.new(self, method, args)
+    end
     
     def http_post(method, args)
       url = URI.parse(@post_url)
