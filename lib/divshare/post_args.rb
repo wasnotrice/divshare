@@ -4,7 +4,7 @@ module Divshare
   class PostArgs < Hash
     def initialize(client, method, args)
       post_args = args.merge({'method' => method, 'api_key' => client.api_key})
-      if client.api_session_key
+      if client.api_session_key && method.to_sym != :logout
         api_sig = client.sign(method, post_args)
         post_args.merge!({'api_session_key' => client.api_session_key, 'api_sig' => api_sig})
       end

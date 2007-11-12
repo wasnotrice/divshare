@@ -1,13 +1,21 @@
 require File.dirname(__FILE__) + '/spec_helper'
 require 'divshare/client'
+include Divshare
 
-module DivshareClientSpecHelper
+module ClientSpecHelper
   def new_client
-    Divshare::Client.new('api_key', 'api_secret')
+    Client.new('api_key', 'api_secret')
   end
 
   def new_client_with_email_and_password
-    Divshare::Client.new('api_key', 'api_secret', 'email', 'password')
+    Client.new('api_key', 'api_secret', 'email', 'password')
+  end
+  
+  def login(client)
+    api_session_key = '123-abcdefghijkl'
+    client.stub!(:login).and_return(api_session_key)
+    client.instance_variable_set(:@api_session_key, client.login)
+    api_session_key
   end
   
   def basic_post_args(to_merge={})
@@ -77,10 +85,19 @@ module DivshareClientSpecHelper
     EOS
   end
   
+  def logout_xml
+    <<-EOS
+    <?xml version="1.0" encoding="UTF-8"?>
+    <response status="1">
+        <logged_out>1</logged_out>
+    </response>
+    EOS
+  end
+  
 end
 
 describe "A new Divshare Client" do
-  include DivshareClientSpecHelper
+  include ClientSpecHelper
 
   it "should be created with api key and secret only" do
     new_client.should be_instance_of(Divshare::Client)
@@ -101,13 +118,11 @@ describe "A new Divshare Client" do
 end
 
 describe "A Divshare Client getting one file" do
-  include DivshareClientSpecHelper
+  include ClientSpecHelper
   before(:each) do
     @client = new_client
     # Intercept calls to #login and set @api_session_key manually
-    @api_session_key = '123-abcdefghijkl'
-    @client.stub!(:login).and_return(@api_session_key)
-    @client.instance_variable_set(:@api_session_key, @client.login)
+    @api_session_key = login(@client)
     @file_id = '2192839-522'
     @api_sig = '0070db55f389a6fe16ec150777363d4d'
     @mock_response = mock('response')
@@ -133,39 +148,67 @@ describe "A Divshare Client getting one file" do
   
 end
 
-describe "A Divshare Client" do
-  include DivshareClientSpecHelper
+describe "A Divshare Client getting two files" do
+  include ClientSpecHelper
   before(:each) do
     @client = new_client
     # Intercept calls to #login and set @api_session_key manually
-    @api_session_key = '123-abcdefghijkl'
-    @client.stub!(:login).and_return(@api_session_key)
-    @client.instance_variable_set(:@api_session_key, @client.login)
+    @api_session_key = login(@client)
     @file_id = '2192839-522'
     @api_sig = '0070db55f389a6fe16ec150777363d4d'
   end
 
-  it "should return an array of two Divshare::Files when requesting two files" do
+  it "should return an array of two Divshare::Files" do
     mock_response = mock('response')
     Net::HTTP.stub!(:post_form).and_return(mock_response)
     mock_response.should_receive(:body).and_return(get_two_files_xml)
     @client.files(['bogus_file_id', 'other']).map {|f| f.class}.should == [Divshare::File, Divshare::File]
   end
+
 end
 
-describe "A Divshare Client, not logged in" do
-  include DivshareClientSpecHelper
+describe "A Divshare Client, logging in" do
+  include ClientSpecHelper
   before(:each) do
     @client = new_client_with_email_and_password
     @file_id = '2192839-522'
     @api_sig = '0070db55f389a6fe16ec150777363d4d'
-  end
-  it "should generate proper arguments for login" do
+    @api_session_key = '123-abcdefghijkl'
     mock_response = mock('response')
     Net::HTTP.should_receive(:post_form).with(URI.parse(@client.post_url), {"method" => "login", "user_email" => 'email', 'user_password' => 'password', 'api_key' => 'api_key'}).and_return(mock_response)
     mock_response.should_receive(:body).and_return(login_xml)
+  end
+
+  it "should login" do
+    @client.login.should == @api_session_key
+  end
+  
+  it "should set api session key" do
+    @client.api_session_key.should be_nil
     @client.login
+    @client.api_session_key.should == @api_session_key
   end
   
 end
+
+describe "A Divshare Client, logging out" do
+  include ClientSpecHelper
+  before(:each) do
+    @client = new_client_with_email_and_password
+    login(@client)
+    mock_response = mock(:response)
+    Net::HTTP.should_receive(:post_form).with(URI.parse(@client.post_url), {'method' => 'logout', "api_key" => 'api_key'}).and_return(mock_response)
+    mock_response.should_receive(:body).and_return(logout_xml)
+  end
+
+  it "should logout" do
+    @client.logout.should be_true
+  end
+  
+  it "should remove api session key on logout" do
+    @client.logout
+    @client.api_session_key.should be_nil
+  end
+end
+
 

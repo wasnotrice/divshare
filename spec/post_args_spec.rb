@@ -9,7 +9,15 @@ module PostArgsSpecHelper
   end
   
   def login_args(to_merge={})
-    basic_args(to_merge).reject { |k,v| %w(api_session_key api_sig).include? k }.merge({'method' => 'login'})
+    strip_key_and_sig(to_merge).merge({'method' => 'login'})
+  end
+  
+  def logout_args(to_merge={})
+    strip_key_and_sig(to_merge).merge({'method' => 'logout'})
+  end
+  
+  def strip_key_and_sig(to_merge={})
+    basic_args(to_merge).reject { |k,v| %w(api_session_key api_sig).include? k }
   end
 end
 
@@ -24,6 +32,11 @@ describe "A PostArgs" do
   it "should generate appropriate arguments for login" do
     @client.should_receive(:api_session_key).and_return(nil)
     PostArgs.new(@client,'login',@login).should == login_args(@login)
+  end
+  
+  it "should generate appropriate arguments for logout" do
+    @client.should_receive(:api_session_key).and_return('123-abcdefghijkl')
+    PostArgs.new(@client,:logout,{}).should == logout_args
   end
   
   it "should convert symbol keys to strings" do

@@ -25,7 +25,7 @@ module Divshare
       files_from(response)
     end
 
-    def get_user_files(limit=nil, offset=nil)
+    def user_files(limit=nil, offset=nil)
       args = {}
       args['limit'] = limit unless limit.nil?
       args['offset'] = offset unless offset.nil?
@@ -46,8 +46,8 @@ module Divshare
     end
 
     def logout
-      response = send_method(:logout, {})
-      if response.at(:logged_out) && response.at(:logged_out).inner_html == 'true' 
+      response = send_method(:logout)
+      if response.at(:logged_out) && response.at(:logged_out).inner_html == SUCCESS 
         @api_session_key = nil
       else
         raise "Couldn't log out. Received: \n" + response.to_s
@@ -72,8 +72,6 @@ module Divshare
     
     # Since login and logout aren't easily re-nameable to use method missing
     def send_method(method_id, *params)
-      pp method_id
-      pp params
       response = http_post(method_id, *params)
       xml = Hpricot(response).at(:response)
       if xml[:status] == FAILURE
