@@ -136,7 +136,6 @@ describe "A new Divshare Client" do
     @client.sign("get_files", {"files" => @files.first}).should == api_sig
   end
   
-  
 end
 
 describe "A Divshare Client getting one file" do

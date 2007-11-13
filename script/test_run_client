@@ -28,12 +28,13 @@ puts "API session key: #{client.api_session_key}"
 puts "Getting user files..."
 files = client.user_files
 puts "Found #{files.length} files:"
-y files
+files.each {|f| puts "#{f}\n"}
 puts
 
-file = config['files'].first
-puts "Getting info for file #{file}"
-puts client.files(file).to_yaml
+file = files.find {|f| f.file_name = "License.txt"}
+puts "Getting info for file #{file.file_name}"
+single_file = client.files(file.file_id)
+puts single_file
 client.logout
 if client.api_session_key
   puts "Error logging out."
