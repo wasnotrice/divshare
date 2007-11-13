@@ -11,11 +11,24 @@ module ClientSpecHelper
     Client.new('api_key', 'api_secret', 'email', 'password')
   end
   
-  def login(client)
-    api_session_key = '123-abcdefghijkl'
+  def login(client, api_session_key='123-abcdefghijkl')
     client.stub!(:login).and_return(api_session_key)
     client.instance_variable_set(:@api_session_key, client.login)
     api_session_key
+  end
+  
+  # Each setup must declare what @mock_response will return
+  def common_setup(opts={})
+    options = {:login => true, :stub_sign => true}.merge(opts)
+    @client = new_client
+    @api_session_key = login(@client) if options[:login]
+    @files = ['2734485-1fc', '2735059-62d']
+    if opts[:stub_sign]
+      @api_sig = 'api_sig'
+      @client.stub!(:sign).and_return(@api_sig)
+    end
+    @mock_response = mock('response')
+    Net::HTTP.stub!(:post_form).and_return(@mock_response)
   end
   
   def basic_post_args(to_merge={})
@@ -114,35 +127,32 @@ describe "A new Divshare Client" do
   
   it "should know the proper post url" do
     new_client.post_url.should == "http://www.divshare.com/api/"
-  end 
+  end
+  
+  # Using string 'api_secret123-abcdefghijklfiles2734485-1fc'
+  it "should generate a correct signature" do
+    api_sig = '0e1c483506dd413808c80183333e1fc2'
+    common_setup(:stub_sign => false)
+    @client.sign("get_files", {"files" => @files.first}).should == api_sig
+  end
+  
+  
 end
 
 describe "A Divshare Client getting one file" do
   include ClientSpecHelper
   before(:each) do
-    @client = new_client
-    # Intercept calls to #login and set @api_session_key manually
-    @api_session_key = login(@client)
-    @file_id = '2192839-522'
-    @api_sig = '0070db55f389a6fe16ec150777363d4d'
-    @mock_response = mock('response')
-    Net::HTTP.stub!(:post_form).and_return(@mock_response)
+    common_setup
+    @mock_response.should_receive(:body).and_return(get_one_file_xml)
   end
 
   # If it generates a PostArgs object, it's doing the right thing
   it "should generate arguments for post" do
-    @mock_response.should_receive(:body).and_return(get_one_file_xml)
-    PostArgs.should_receive(:new).with(@client,:get_files,{'files' => @file_id})
-    @client.files(@file_id)
-  end
-  
-  # Working from 'api_secret123-abcdefghijklfiles2192839-522'
-  it "should generate a correct signature" do
-    @client.sign("get_files", {"files" => @file_id}).should == @api_sig
+    PostArgs.should_receive(:new).with(@client,:get_files,{'files' => @files.first})
+    @client.files(@files.first)
   end
   
   it "should return an array of one Divshare::File when requesting a file" do
-    @mock_response.should_receive(:body).and_return(get_one_file_xml)
     @client.files('bogus_file_id').map {|f| f.class}.should == [Divshare::File]
   end
   
@@ -151,11 +161,7 @@ end
 describe "A Divshare Client getting two files" do
   include ClientSpecHelper
   before(:each) do
-    @client = new_client
-    # Intercept calls to #login and set @api_session_key manually
-    @api_session_key = login(@client)
-    @file_id = '2192839-522'
-    @api_sig = '0070db55f389a6fe16ec150777363d4d'
+    common_setup
   end
 
   it "should return an array of two Divshare::Files" do
@@ -164,19 +170,26 @@ describe "A Divshare Client getting two files" do
     mock_response.should_receive(:body).and_return(get_two_files_xml)
     @client.files(['bogus_file_id', 'other']).map {|f| f.class}.should == [Divshare::File, Divshare::File]
   end
+end
 
+describe "A Divshare Client getting user files" do
+  include ClientSpecHelper
+  before(:each) do
+   common_setup
+   @mock_response.should_receive(:body).and_return(get_two_files_xml)
+  end
+
+  it "should return an array of files" do
+    @client.user_files.map {|f| f.class }.should == [Divshare::File, Divshare::File]
+  end
 end
 
 describe "A Divshare Client, logging in" do
   include ClientSpecHelper
   before(:each) do
-    @client = new_client_with_email_and_password
-    @file_id = '2192839-522'
-    @api_sig = '0070db55f389a6fe16ec150777363d4d'
-    @api_session_key = '123-abcdefghijkl'
-    mock_response = mock('response')
-    Net::HTTP.should_receive(:post_form).with(URI.parse(@client.post_url), {"method" => "login", "user_email" => 'email', 'user_password' => 'password', 'api_key' => 'api_key'}).and_return(mock_response)
-    mock_response.should_receive(:body).and_return(login_xml)
+    common_setup(:login => false)
+    @api_session_key = login(new_client)
+    @mock_response.should_receive(:body).and_return(login_xml)
   end
 
   it "should login" do
@@ -193,13 +206,8 @@ end
 describe "A Divshare Client, logging out" do
   include ClientSpecHelper
   before(:each) do
-    @client = new_client_with_email_and_password
-    @api_session_key = login(@client)
-    @api_sig = 'api_sig'
-    @client.stub!(:sign).and_return(@api_sig)
-    mock_response = mock(:response)
-    Net::HTTP.should_receive(:post_form).with(URI.parse(@client.post_url), basic_post_args({'method' => 'logout', 'api_sig' => 'api_sig'})).and_return(mock_response)
-    mock_response.should_receive(:body).and_return(logout_xml)
+    common_setup
+    @mock_response.should_receive(:body).and_return(logout_xml)
   end
 
   it "should logout" do

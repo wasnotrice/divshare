@@ -13,19 +13,27 @@ if ARGV.length == 1
   config = YAML.load(File.open(ARGV[0]))
 else  
   print "API key: "
-  config[:api_key] = gets
+  config["api_key"] = gets
   print "API secret: "
-  config[:api_secret] = gets
+  config["api_secret"] = gets
   print "Email: "
-  config[:email] = gets
+  config["email"] = gets
   print "Password (will show up on screen): "
-  config[:password]= gets
+  config["password"]= gets
 end
 client = Client.new(config["api_key"], config["api_secret"], config["email"], config["password"])
 client.login
 puts "Logged in successfully."
 puts "API session key: #{client.api_session_key}"
+puts "Getting user files..."
+files = client.user_files
+puts "Found #{files.length} files:"
+y files
+puts
 
+file = config['files'].first
+puts "Getting info for file #{file}"
+puts client.files(file).to_yaml
 client.logout
 if client.api_session_key
   puts "Error logging out."

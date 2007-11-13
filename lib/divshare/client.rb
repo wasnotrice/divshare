@@ -22,7 +22,7 @@ module Divshare
     def files(file_ids)
       file_ids = [file_ids] unless file_ids.respond_to?(:join)
       response = get_files('files' => file_ids.join(','))
-      files_from(response)
+      files_from response
     end
 
     def user_files(limit=nil, offset=nil)
@@ -45,6 +45,8 @@ module Divshare
       end
     end
 
+    # Returns true if logout is successful. Accepts '1' or 'true' as
+    # successful response. 
     def logout
       response = send_method(:logout)
       if response.at(:logged_out) && (%w(true 1).include? response.at(:logged_out).inner_html)
@@ -57,6 +59,22 @@ module Divshare
 
     def sign(method, args)
       Digest::MD5.hexdigest(string_to_sign(args))
+    end
+
+    # From http://www.divshare.com/integrate/api
+    #
+    # * Your secret key is 123-secret. 
+    # * Your session key is 456-session. 
+    # * You are using the get_user_files method, and you're sending the
+    #   parameters limit=5 and offset=10.
+    #
+    # The string used to create your signature will be:
+    # 123-secret456-sessionlimit5offset10. Note that the parameters must be in
+    # alphabetical order, so limit always comes before offset. Each parameter
+    # should be paired with its value as shown.
+    def string_to_sign(args)
+      args_for_string = args.dup.delete_if {|k,v| %w(api_key method api_sig api_session_key).include?(k) }
+      "#{@api_secret}#{@api_session_key}#{args_for_string.to_a.sort.flatten.join}"
     end
 
     private
@@ -95,20 +113,5 @@ module Divshare
       Net::HTTP.post_form(url, post_args(method, args)).body
     end
     
-    # From http://www.divshare.com/integrate/api
-    #
-    # * Your secret key is 123-secret. 
-    # * Your session key is 456-session. 
-    # * You are using the get_user_files method, and you're sending the
-    #   parameters limit=5 and offset=10.
-    #
-    # The string used to create your signature will be:
-    # 123-secret456-sessionlimit5offset10. Note that the parameters must be in
-    # alphabetical order, so limit always comes before offset. Each parameter
-    # should be paired with its value as shown.
-    def string_to_sign(args)
-      args_for_string = args.dup.delete_if {|k,v| %w(api_key method api_sig api_session_key).include?(k) }
-      "#{@api_secret}#{@api_session_key}#{args_for_string.to_a.sort.flatten.join}"
-    end
   end
 end
