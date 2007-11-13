@@ -3,6 +3,7 @@ require 'divshare/client'
 include Divshare
 
 module ClientSpecHelper
+  include DivshareMockXML
   def new_client
     Client.new('api_key', 'api_secret')
   end
@@ -34,79 +35,6 @@ module ClientSpecHelper
   def basic_post_args(to_merge={})
     {'api_key' => 'api_key', "api_sig" => @api_sig, "api_session_key" => @api_session_key}.merge(to_merge)
   end
-  
-  # From http://www.divshare.com/integrate/api
-  def get_one_file_xml
-    <<-EOS
-    <?xml version="1.0" encoding="UTF-8"?>
-    <response status="1">
-        <files>
-            <file>
-                <file_id>123456-abc</file_id>
-                <file_name>My Resume.doc</file_name>
-                <file_description>Resume (Draft 3)</file_description>
-                <file_size>0.4 MB</file_size>
-                <downloads>4</downloads>
-                <last_downloaded_at>1192417863</last_downloaded_at>
-                <uploaded_at>1192454938</uploaded_at>
-                <folder_title>Job Applications</folder_title>
-                <folder_id>12345</folder_id>
-            </file>
-        </files>
-    </response>
-    EOS
-  end
-  
-  def get_two_files_xml
-    <<-EOS
-    <?xml version="1.0" encoding="UTF-8"?>
-    <response status="1">
-        <files>
-            <file>
-                <file_id>123456-abc</file_id>
-                <file_name>My Resume.doc</file_name>
-                <file_description>Resume (Draft 3)</file_description>
-                <file_size>0.4 MB</file_size>
-                <downloads>4</downloads>
-                <last_downloaded_at>1192417863</last_downloaded_at>
-                <uploaded_at>1192454938</uploaded_at>
-                <folder_title>Job Applications</folder_title>
-                <folder_id>12345</folder_id>
-            </file>
-            <file>
-                <file_id>123456-abc</file_id>
-                <file_name>My Resume.doc</file_name>
-                <file_description>Resume (Draft 3)</file_description>
-                <file_size>0.4 MB</file_size>
-                <downloads>4</downloads>
-                <last_downloaded_at>1192417863</last_downloaded_at>
-                <uploaded_at>1192454938</uploaded_at>
-                <folder_title>Job Applications</folder_title>
-                <folder_id>12345</folder_id>
-            </file>
-        </files>
-    </response>
-    EOS
-  end
-  
-  def login_xml
-    <<-EOS
-    <?xml version="1.0" encoding="UTF-8"?>
-    <response status="1">
-        <api_session_key>123-abcdefghijkl</api_session_key>
-    </response>
-    EOS
-  end
-  
-  def logout_xml
-    <<-EOS
-    <?xml version="1.0" encoding="UTF-8"?>
-    <response status="1">
-        <logged_out>true</logged_out>
-    </response>
-    EOS
-  end
-  
 end
 
 describe "A new Divshare Client" do
@@ -148,11 +76,11 @@ describe "A Divshare Client getting one file" do
   # If it generates a PostArgs object, it's doing the right thing
   it "should generate arguments for post" do
     PostArgs.should_receive(:new).with(@client,:get_files,{'files' => @files.first})
-    @client.files(@files.first)
+    @client.get_files(@files.first)
   end
   
   it "should return an array of one Divshare::File when requesting a file" do
-    @client.files('bogus_file_id').map {|f| f.class}.should == [Divshare::File]
+    @client.get_files('bogus_file_id').map {|f| f.class}.should == [Divshare::File]
   end
   
 end
@@ -167,7 +95,7 @@ describe "A Divshare Client getting two files" do
     mock_response = mock('response')
     Net::HTTP.stub!(:post_form).and_return(mock_response)
     mock_response.should_receive(:body).and_return(get_two_files_xml)
-    @client.files(['bogus_file_id', 'other']).map {|f| f.class}.should == [Divshare::File, Divshare::File]
+    @client.get_files(['bogus_file_id', 'other']).map {|f| f.class}.should == [Divshare::File, Divshare::File]
   end
 end
 
@@ -179,7 +107,7 @@ describe "A Divshare Client getting user files" do
   end
 
   it "should return an array of files" do
-    @client.user_files.map {|f| f.class }.should == [Divshare::File, Divshare::File]
+    @client.get_user_files.map {|f| f.class }.should == [Divshare::File, Divshare::File]
   end
 end
 
@@ -218,5 +146,3 @@ describe "A Divshare Client, logging out" do
     @client.api_session_key.should be_nil
   end
 end
-
-

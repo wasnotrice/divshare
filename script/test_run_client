@@ -35,7 +35,7 @@ puts
 
 file = files.find {|f| f.file_name = "License.txt"}
 puts "Getting info for file #{file.file_name}"
-single_file = client.files(file.file_id)
+single_file = client.get_files(file.file_id)
 puts single_file
 client.logout
 if client.api_session_key

@@ -21,22 +21,22 @@ module Divshare
     end
 
     # file_ids should be an array of file ids
-    def files(file_ids)
+    def get_files(file_ids)
       file_ids = [file_ids] unless file_ids.respond_to?(:join)
-      response = get_files('files' => file_ids.join(','))
+      response = send_method(:get_files, 'files' => file_ids.join(','))
       files_from response
     end
 
-    def user_files(limit=nil, offset=nil)
+    def get_user_files(limit=nil, offset=nil)
       args = {}
       args['limit'] = limit unless limit.nil?
       args['offset'] = offset unless offset.nil?
-      response = get_user_files(args)
+      response = send_method(:get_user_files, args)
       files_from response
     end
 
-    def user_info
-      response = get_user_info
+    def get_user_info
+      response = send_method :get_user_info
       user_from response
     end
 
@@ -85,10 +85,6 @@ module Divshare
       Divshare::User.new(xml)
     end
 
-    def method_missing(method_id, *params)
-      send_method(method_id, *params)
-    end
-    
     # Since login and logout aren't easily re-nameable to use method missing
     def send_method(method_id, *params)
       response = http_post(method_id, *params)

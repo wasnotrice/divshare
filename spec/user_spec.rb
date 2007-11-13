@@ -5,7 +5,7 @@ include Divshare
 describe "A basic User" do
   include DivshareMockXML
   before(:each) do 
-    @xml = Hpricot(get_user_info).at(:user_info)
+    @xml = Hpricot(get_user_info_xml)#.at(:user_info)
   end
   
   it "should set instance variables at creation" do
