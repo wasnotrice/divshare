@@ -25,6 +25,8 @@ client = Client.new(config["api_key"], config["api_secret"], config["email"], co
 client.login
 puts "Logged in successfully."
 puts "API session key: #{client.api_session_key}"
+puts "Getting user info..."
+puts client.user_info
 puts "Getting user files..."
 files = client.user_files
 puts "Found #{files.length} files:"

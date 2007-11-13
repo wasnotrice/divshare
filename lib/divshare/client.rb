@@ -4,6 +4,8 @@ require 'net/http'
 require 'hpricot'
 require 'digest/md5'
 require 'divshare/file'
+require 'divshare/post_args'
+require 'divshare/user'
 
 module Divshare
   class Client
@@ -31,6 +33,11 @@ module Divshare
       args['offset'] = offset unless offset.nil?
       response = get_user_files(args)
       files_from response
+    end
+
+    def user_info
+      response = get_user_info
+      user_from response
     end
 
     def login(email=nil, password=nil)
@@ -71,6 +78,11 @@ module Divshare
       xml = xml/:file
       xml = [xml] unless xml.respond_to?(:each)    
       files = xml.collect { |f| Divshare::File.new f }
+    end
+    
+    def user_from(xml)
+      xml = xml.at(:user_info)
+      Divshare::User.new(xml)
     end
 
     def method_missing(method_id, *params)
