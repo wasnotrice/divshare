@@ -51,23 +51,23 @@ describe "An audio DivshareFile" do
   end
 end
 
-describe "An audio DivshareFile" do
+describe "An image DivshareFile" do
   include DivshareFileSpecHelper
   before(:each) do
     @xml = Hpricot(get_one_file_xml)/:file
-    @file_name = "audio.mp3"
+    @file_name = "image.jpg"
     @xml.at(:file_name).swap("<file_name>#{@file_name}</file_name>")
     @file = DivshareFile.new(@xml)
   end
   it_should_behave_like "A basic DivshareFile"
   
-  it "should know it is audio" do
-    @file.should be_audio
+  it "should know it is an image" do
+    @file.should be_image
   end
   
-  it "should not think it is video, image, or document" do
+  it "should not think it is video, audio, or document" do
     @file.should_not be_video
-    @file.should_not be_image
+    @file.should_not be_audio
     @file.should_not be_document
   end
 end
