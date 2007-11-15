@@ -41,8 +41,11 @@ module Divshare
       @medium == :image
     end
     
-    def embed_tag
-      self.send("#{medium}_embed_tag")
+    # Image options
+    #
+    # :size => :fullsize | :midsize | :thumb
+    def embed_tag(opts={})
+      self.send("#{medium}_embed_tag_template", opts).gsub('[FILE ID]', @file_id)
     end
     
     def to_s
@@ -63,18 +66,41 @@ module Divshare
       end
     end
     
-    def audio_embed_tag
-    end
-    
-    def video_embed_tag
+    def audio_embed_tag_template(opts={})
       tag = <<-END_OF_TAG
-<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,18,0" width="425" height="374" id="divflv">
-  <param name="movie" value="http://www.divshare.com/flash/video?myId=[FILE ID]" />
-  <param name="allowFullScreen" value="true" />
-  <embed src="http://www.divshare.com/flash/video?myId=[FILE ID]" width="425" height="374" name="divflv" allowfullscreen="true" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
+<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0" width="335" height="47" id="divaudio2">
+    <param name="movie" value="http://www.divshare.com/flash/audio?myId=[FILE ID]" />
+    <embed src="http://www.divshare.com/flash/audio?myId=[FILE ID]" width="335" height="47" name="divaudio2" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
 </object>
       END_OF_TAG
-      tag.gsub('[FILE ID]', @file_id)
+    end
+    
+    def video_embed_tag_template(opts={})
+      tag = <<-END_OF_TAG
+<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,18,0" width="425" height="374" id="divflv">
+    <param name="movie" value="http://www.divshare.com/flash/video?myId=[FILE ID]" />
+    <param name="allowFullScreen" value="true" />
+    <embed src="http://www.divshare.com/flash/video?myId=[FILE ID]" width="425" height="374" name="divflv" allowfullscreen="true" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
+</object>
+      END_OF_TAG
+    end
+    
+    def document_embed_tag_template(opts={})
+      tag = <<-END_OF_TAG
+<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0" width="560" height="500" id="divdoc">
+    <param name="movie" value="http://www.divshare.com/flash/document/[FILE ID]" />
+    <embed src="http://www.divshare.com/flash/document/[FILE ID]" width="560" height="500" name="divdoc" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
+</object>  
+      END_OF_TAG
+    end
+    
+    def image_embed_tag_template(opts={:size=>:midsize})
+      size = case opts[:size]
+        when :midsize, :mid:     "midsize/"
+        when :thumb, :thumbnail: "thumb/"
+        else ""
+      end
+      tag = "http://www.divshare.com/img/#{size}[FILE ID]"
     end
   end
 end
