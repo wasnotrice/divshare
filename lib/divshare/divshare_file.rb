@@ -17,10 +17,12 @@ module Divshare
     attr_reader *ATTRIBUTES
     attr_reader :medium
     
-    def initialize(xml)
+    def initialize(xml=Hpricot(""))
       ATTRIBUTES.each do |attr|
-        value = xml.at(attr).inner_html
-        instance_variable_set("@#{attr}", value)
+        if xml.at(attr)
+          value = xml.at(attr).inner_html
+          instance_variable_set("@#{attr}", value)
+        end
       end
       @medium = find_medium
     end
@@ -56,7 +58,7 @@ module Divshare
     
     private
     def find_medium
-      ext = File.extname(file_name)
+      ext = @file_name ? File.extname(@file_name) : nil
       medium = case
         when AUDIO.match(ext): :audio
         when VIDEO.match(ext): :video

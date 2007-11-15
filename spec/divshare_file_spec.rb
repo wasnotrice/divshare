@@ -30,6 +30,19 @@ describe "A basic DivshareFile", :shared => true do
     
 end
 
+describe "A DivshareFile created without xml" do
+  before(:each) do
+    @file = DivshareFile.new
+  end
+  
+  it "should not raise an exception" do
+  end
+  
+  it "should set medium to nil" do
+    @file.medium.should be_nil
+  end
+end
+
 describe "An audio DivshareFile" do
   include DivshareFileSpecHelper
   before(:each) do
