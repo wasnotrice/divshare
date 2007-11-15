@@ -25,7 +25,7 @@ describe "A basic DivshareFile", :shared => true do
   include DivshareFileSpecHelper
 
   it "should set instance variables at creation" do
-    @file.instance_variables.map {|i| @file.instance_variable_get(i) }.length.should == 9
+    @file.instance_variables.map {|i| @file.instance_variable_get(i) }.length.should == 10
   end
     
 end

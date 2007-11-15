@@ -9,16 +9,41 @@ module Divshare
     DOCUMENT = /^\.(doc|pdf|ppt)$/i
     IMAGE = /^\.(jpg|gif|png)/i
     
-    attr_accessor *ATTRIBUTES
+    attr_reader *ATTRIBUTES
+    attr_reader :medium
     
     def initialize(xml)
       ATTRIBUTES.each do |attr|
         value = xml.at(attr).inner_html
         instance_variable_set("@#{attr}", value)
       end
+      @medium = find_medium
     end
     
-    def medium
+    def audio?
+      @medium == :audio
+    end
+    
+    def document?
+      @medium == :document
+    end
+    
+    def video?
+      @medium == :video
+    end
+    
+    def image?
+      @medium == :image
+    end
+    
+    def to_s
+      s = "#{file_name} <Divshare::DivshareFile>\n"
+      ATTRIBUTES.each { |a| s << sprintf(" %s: %s\n", a, self.send(a)) }
+      s
+    end
+    
+    private
+    def find_medium
       ext = File.extname(file_name)
       medium = case
         when AUDIO.match(ext): :audio
@@ -27,30 +52,6 @@ module Divshare
         when IMAGE.match(ext): :image
         else :unknown
       end
-    end
-    
-    def audio?
-      medium == :audio
-    end
-    
-    def document?
-      medium == :document
-    end
-    
-    def video?
-      medium == :video
-    end
-    
-    def image?
-      medium == :image
-    end
-    
-    def to_s
-      s = "#{file_name} <Divshare::DivshareFile>\n"
-      ATTRIBUTES.each do |a|
-        s << sprintf(" %s: %s\n", a, self.send(a))
-      end
-      s
     end
   end
 end
