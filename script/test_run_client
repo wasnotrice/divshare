@@ -1,4 +1,15 @@
 #!/usr/bin/env ruby
+# Pass a YAML file like the following as the command-line argument to load 
+# your personal account settings and test with your account.
+#
+# api_key: key
+# api_secret: secret
+# email: email@email.com
+# password: password
+# files: 
+#   - file_1_id
+#   - file_2_id
+
 $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 require 'divshare'
 include Divshare
