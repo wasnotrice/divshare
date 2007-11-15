@@ -25,7 +25,7 @@ module Divshare
         when VIDEO.match(ext): :video
         when DOCUMENT.match(ext): :document
         when IMAGE.match(ext): :image
-        else nil
+        else :unknown
       end
     end
     
