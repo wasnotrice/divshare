@@ -3,7 +3,7 @@ require 'cgi'
 require 'net/http'
 require 'hpricot'
 require 'digest/md5'
-require 'divshare/file'
+require 'divshare/divshare_file'
 require 'divshare/post_args'
 require 'divshare/user'
 
@@ -77,7 +77,7 @@ module Divshare
     def files_from(xml)
       xml = xml/:file
       xml = [xml] unless xml.respond_to?(:each)    
-      files = xml.collect { |f| Divshare::File.new f }
+      files = xml.collect { |f| DivshareFile.new f }
     end
     
     def user_from(xml)

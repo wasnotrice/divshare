@@ -79,8 +79,8 @@ describe "A Divshare Client getting one file" do
     @client.get_files(@files.first)
   end
   
-  it "should return an array of one Divshare::File when requesting a file" do
-    @client.get_files('bogus_file_id').map {|f| f.class}.should == [Divshare::File]
+  it "should return an array of one DivshareFile when requesting a file" do
+    @client.get_files('bogus_file_id').map {|f| f.class}.should == [DivshareFile]
   end
   
 end
@@ -91,11 +91,11 @@ describe "A Divshare Client getting two files" do
     common_setup
   end
 
-  it "should return an array of two Divshare::Files" do
+  it "should return an array of two DivshareFiles" do
     mock_response = mock('response')
     Net::HTTP.stub!(:post_form).and_return(mock_response)
     mock_response.should_receive(:body).and_return(get_two_files_xml)
-    @client.get_files(['bogus_file_id', 'other']).map {|f| f.class}.should == [Divshare::File, Divshare::File]
+    @client.get_files(['bogus_file_id', 'other']).map {|f| f.class}.should == [DivshareFile, DivshareFile]
   end
 end
 
@@ -107,7 +107,7 @@ describe "A Divshare Client getting user files" do
   end
 
   it "should return an array of files" do
-    @client.get_user_files.map {|f| f.class }.should == [Divshare::File, Divshare::File]
+    @client.get_user_files.map {|f| f.class }.should == [DivshareFile, DivshareFile]
   end
 end
 
