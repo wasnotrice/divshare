@@ -91,6 +91,17 @@ describe "A video DivshareFile" do
     @file.should_not be_image
     @file.should_not be_document
   end
+  
+  it "should generate a good embed tag" do
+    tag = <<-END_OF_TAG
+<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,18,0" width="425" height="374" id="divflv">
+  <param name="movie" value="http://www.divshare.com/flash/video?myId=#{@file.file_id}" />
+  <param name="allowFullScreen" value="true" />
+  <embed src="http://www.divshare.com/flash/video?myId=#{@file.file_id}" width="425" height="374" name="divflv" allowfullscreen="true" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
+</object>
+    END_OF_TAG
+    @file.embed_tag.should == tag
+  end
 end
 
 

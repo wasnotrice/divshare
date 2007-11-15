@@ -8,6 +8,11 @@ module Divshare
     VIDEO = /^\.(avi|wmv|mov|mpg|asf)$/i
     DOCUMENT = /^\.(doc|pdf|ppt)$/i
     IMAGE = /^\.(jpg|gif|png)/i
+    EMBED_TAGS = {
+      :audio => "<object classid=\"clsid:d27cdb6e-ae6d-11cf-96b8-444553540000\" codebase=\"http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0\" width=\"335\" height=\"28\" id=\"divaudio2\"><param name=\"movie\" value=\"http://www.divshare.com/flash/audio?myId=INSERT_SLUG_HERE\" /><embed src=\"http://www.divshare.com/flash/audio?myId=INSERT_SLUG_HERE\" width=\"335\" height=\"28\" name=\"divaudio2\" type=\"application/x-shockwave-flash\" pluginspage=\"http://www.macromedia.com/go/getflashplayer\"></embed></object>",
+      :video => "<object classid=\"clsid:d27cdb6e-ae6d-11cf-96b8-444553540000\" codebase=\"http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,18,0\" width=\"425\" height=\"374\" id=\"divflv\"><param name=\"movie\" value=\"http://www.divshare.com/flash/video?myId=INSERT_SLUG_HERE\" /><param name=\"allowFullScreen\" value=\"true\" /><embed src=\"http://www.divshare.com/flash/video?myId=INSERT_SLUG_HERE\" width=\"425\" height=\"374\" name=\"divflv\" allowfullscreen=\"true\" type=\"application/x-shockwave-flash\" pluginspage=\"http://www.macromedia.com/go/getflashplayer\"></embed></object>",
+      :image => ""}
+    
     
     attr_reader *ATTRIBUTES
     attr_reader :medium
@@ -36,6 +41,10 @@ module Divshare
       @medium == :image
     end
     
+    def embed_tag
+      self.send("#{medium}_embed_tag")
+    end
+    
     def to_s
       s = "#{file_name} <Divshare::DivshareFile>\n"
       ATTRIBUTES.each { |a| s << sprintf(" %s: %s\n", a, self.send(a)) }
@@ -50,8 +59,22 @@ module Divshare
         when VIDEO.match(ext): :video
         when DOCUMENT.match(ext): :document
         when IMAGE.match(ext): :image
-        else :unknown
+        else nil
       end
+    end
+    
+    def audio_embed_tag
+    end
+    
+    def video_embed_tag
+      tag = <<-END_OF_TAG
+<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,18,0" width="425" height="374" id="divflv">
+  <param name="movie" value="http://www.divshare.com/flash/video?myId=[FILE ID]" />
+  <param name="allowFullScreen" value="true" />
+  <embed src="http://www.divshare.com/flash/video?myId=[FILE ID]" width="425" height="374" name="divflv" allowfullscreen="true" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer"></embed>
+</object>
+      END_OF_TAG
+      tag.gsub('[FILE ID]', @file_id)
     end
   end
 end
