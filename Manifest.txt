@@ -18,7 +18,7 @@ script/test_run_client
 script/txt2html
 setup.rb
 spec/client_spec.rb
-spec/file_spec.rb
+spec/divshare_file_spec.rb
 spec/fixtures/divshare_mock_valid_audio.html
 spec/fixtures/divshare_mock_valid_video.html
 spec/post_args_spec.rb

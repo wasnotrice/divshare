@@ -8,11 +8,6 @@ module Divshare
     VIDEO = /^\.(avi|wmv|mov|mpg|asf)$/i
     DOCUMENT = /^\.(doc|pdf|ppt)$/i
     IMAGE = /^\.(jpg|gif|png)/i
-    EMBED_TAGS = {
-      :audio => "<object classid=\"clsid:d27cdb6e-ae6d-11cf-96b8-444553540000\" codebase=\"http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0\" width=\"335\" height=\"28\" id=\"divaudio2\"><param name=\"movie\" value=\"http://www.divshare.com/flash/audio?myId=INSERT_SLUG_HERE\" /><embed src=\"http://www.divshare.com/flash/audio?myId=INSERT_SLUG_HERE\" width=\"335\" height=\"28\" name=\"divaudio2\" type=\"application/x-shockwave-flash\" pluginspage=\"http://www.macromedia.com/go/getflashplayer\"></embed></object>",
-      :video => "<object classid=\"clsid:d27cdb6e-ae6d-11cf-96b8-444553540000\" codebase=\"http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,18,0\" width=\"425\" height=\"374\" id=\"divflv\"><param name=\"movie\" value=\"http://www.divshare.com/flash/video?myId=INSERT_SLUG_HERE\" /><param name=\"allowFullScreen\" value=\"true\" /><embed src=\"http://www.divshare.com/flash/video?myId=INSERT_SLUG_HERE\" width=\"425\" height=\"374\" name=\"divflv\" allowfullscreen=\"true\" type=\"application/x-shockwave-flash\" pluginspage=\"http://www.macromedia.com/go/getflashplayer\"></embed></object>",
-      :image => ""}
-    
     
     attr_reader *ATTRIBUTES
     attr_reader :medium
@@ -28,19 +23,19 @@ module Divshare
     end
     
     def audio?
-      @medium == :audio
+      @medium == "audio"
     end
     
     def document?
-      @medium == :document
+      @medium == "document"
     end
     
     def video?
-      @medium == :video
+      @medium == "video"
     end
     
     def image?
-      @medium == :image
+      @medium == "image"
     end
     
     # Image options
@@ -60,10 +55,10 @@ module Divshare
     def find_medium
       ext = @file_name ? File.extname(@file_name) : nil
       medium = case
-        when AUDIO.match(ext): :audio
-        when VIDEO.match(ext): :video
-        when DOCUMENT.match(ext): :document
-        when IMAGE.match(ext): :image
+        when AUDIO.match(ext): "audio"
+        when VIDEO.match(ext): "video"
+        when DOCUMENT.match(ext): "document"
+        when IMAGE.match(ext): "image"
         else nil
       end
     end

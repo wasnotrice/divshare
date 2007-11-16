@@ -64,6 +64,11 @@ describe "A new Divshare Client" do
     @client.sign("get_files", {"files" => @files.first}).should == api_sig
   end
   
+  it "should raise DivshareConnectionError on timeout" do
+    Net::HTTP.should_receive(:post_form).once.and_return(DivshareConnectionError)
+    new_client_with_email_and_password.login
+  end
+  
 end
 
 describe "A Divshare Client getting one file" do
