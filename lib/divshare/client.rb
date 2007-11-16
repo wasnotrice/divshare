@@ -3,6 +3,7 @@ require 'cgi'
 require 'net/http'
 require 'hpricot'
 require 'digest/md5'
+require 'divshare/errors'
 require 'divshare/divshare_file'
 require 'divshare/post_args'
 require 'divshare/user'
@@ -48,7 +49,7 @@ module Divshare
       if response.at(:api_session_key)
         @api_session_key = response.at(:api_session_key).inner_html
       else
-        raise_error "Divshare error: Couldn't log in. Received: \n" + response.to_s
+        raise Divshare::APIError, "Couldn't log in. Received: \n" + response.to_s
       end
     end
 
@@ -59,7 +60,7 @@ module Divshare
       if response.at(:logged_out) && (%w(true 1).include? response.at(:logged_out).inner_html)
         @api_session_key = nil
       else
-        raise_error "Divshare error: Couldn't log out. Received: \n" + response.to_s
+        raise Divshare::APIError, "Couldn't log out. Received: \n" + response.to_s
       end
       true
     end
@@ -69,11 +70,6 @@ module Divshare
     end
 
     private
-    def raise_error(error)
-      raise error
-      exit(0)
-    end
-    
     def files_from(xml)
       xml = xml/:file
       xml = [xml] unless xml.respond_to?(:each)    
@@ -91,7 +87,7 @@ module Divshare
       xml = Hpricot(response).at(:response)
       if xml[:status] == FAILURE
         errors = (xml/:error).collect {|e| e.inner_html}
-        raise_error "Divshare error: " + errors.join("\n")
+        raise Divshare::APIError, errors.join("\n")
       end
       xml
     end      
@@ -102,7 +98,20 @@ module Divshare
     
     def http_post(method, args={})
       url = URI.parse(@post_url)
-      Net::HTTP.post_form(url, post_args(method, args)).body
+      tries = 3
+      response = ""
+      begin
+        response = Net::HTTP.post_form(url, post_args(method, args)).body
+      rescue
+        tries -= 1
+          puts "Tries == '#{tries}'"
+        if tries > 0
+          retry
+        else
+          raise Divshare::ConnectionError, "Couldn't connect for '#{method}'"
+        end
+      end
+      response
     end
     
     # From http://www.divshare.com/integrate/api

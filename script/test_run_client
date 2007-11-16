@@ -37,14 +37,14 @@ client.login
 puts "Logged in successfully."
 puts "API session key: #{client.api_session_key}"
 puts "Getting user info..."
-puts client.user_info
+puts client.get_user_info
 puts "Getting user files..."
-files = client.user_files
+files = client.get_user_files
 puts "Found #{files.length} files:"
 files.each {|f| puts "#{f}\n"}
 puts
 
-file = files.find {|f| f.file_name = "License.txt"}
+file = files.find {|f| f.file_name == "License.txt"}
 puts "Getting info for file #{file.file_name}"
 single_file = client.get_files(file.file_id)
 puts single_file
