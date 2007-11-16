@@ -37,6 +37,13 @@ module Divshare
       puts file_ids.class
       files.delete_if {|f| file_ids.include?(f.file_id) == false}
     end
+    
+    # A convenience method for finding only one file. Returns a single
+    # DivshareFile instead of an array.
+    def get_file(file_id)
+      raise ArgumentError, "Only one file id allowed for this method" if file_id.is_a?(Array)
+      get_files(file_id).first
+    end
 
     def get_user_files(limit=nil, offset=nil)
       args = {}

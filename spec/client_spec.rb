@@ -76,20 +76,29 @@ describe "A Divshare Client getting one file" do
   include ClientSpecHelper
   before(:each) do
     common_setup
-    @mock_response.should_receive(:body).and_return(get_one_file_xml)
   end
 
   # If it generates a PostArgs object, it's doing the right thing
   it "should generate arguments for post" do
     pending("Fix to API that allows correct get_files method")
+    @mock_response.should_receive(:body).and_return(get_one_file_xml)
     PostArgs.should_receive(:new).with(@client,:get_files,{'files' => @files.first})
     @client.get_files(@files.first)
   end
   
-  it "should return an array of one DivshareFile when requesting a file" do
+  it "should return an array of one DivshareFile when requesting a file through get_files" do
+    @mock_response.should_receive(:body).and_return(get_one_file_xml)
     @client.get_files('123456-abc').map {|f| f.class}.should == [DivshareFile]
   end
   
+  it "should return a DivshareFile when requesting a file through get_file" do
+    @mock_response.should_receive(:body).and_return(get_one_file_xml)
+    @client.get_file('123456-abc').class.should == DivshareFile
+  end
+  
+  it "should raise ArgumentError if an array is passed to get_file" do
+    lambda {@client.get_file(['123456-abc'])}.should raise_error(ArgumentError)
+  end
 end
 
 describe "A Divshare Client getting two files" do
