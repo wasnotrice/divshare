@@ -81,12 +81,13 @@ describe "A Divshare Client getting one file" do
 
   # If it generates a PostArgs object, it's doing the right thing
   it "should generate arguments for post" do
+    pending("Fix to API that allows correct get_files method")
     PostArgs.should_receive(:new).with(@client,:get_files,{'files' => @files.first})
     @client.get_files(@files.first)
   end
   
   it "should return an array of one DivshareFile when requesting a file" do
-    @client.get_files('bogus_file_id').map {|f| f.class}.should == [DivshareFile]
+    @client.get_files('123456-abc').map {|f| f.class}.should == [DivshareFile]
   end
   
 end
@@ -101,7 +102,7 @@ describe "A Divshare Client getting two files" do
     mock_response = mock('response')
     Net::HTTP.stub!(:post_form).and_return(mock_response)
     mock_response.should_receive(:body).and_return(get_two_files_xml)
-    @client.get_files(['bogus_file_id', 'other']).map {|f| f.class}.should == [DivshareFile, DivshareFile]
+    @client.get_files(['123456-abc', '456789-def']).map {|f| f.class}.should == [DivshareFile, DivshareFile]
   end
 end
 
@@ -115,6 +116,13 @@ describe "A Divshare Client getting user files" do
   it "should return an array of files" do
     @client.get_user_files.map {|f| f.class }.should == [DivshareFile, DivshareFile]
   end
+  
+  # If it generates a PostArgs object, it's doing the right thing
+  it "should generate arguments for post" do
+    PostArgs.should_receive(:new).with(@client,:get_user_files, {})
+    @client.get_user_files
+  end
+  
 end
 
 describe "A Divshare Client, logging in" do

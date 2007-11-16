@@ -22,10 +22,20 @@ module Divshare
     end
 
     # file_ids should be an array of file ids
+    # def get_files(file_ids)
+    #   file_ids = [file_ids] unless file_ids.respond_to?(:join)
+    #   response = send_method(:get_files, 'files' => file_ids.join(','))
+    #   files_from response
+    # end
+
+    # This method replaces the real get_files until the API is cleared up and
+    # working properly. Limitation: it can only retrieve files owned by the
+    # logged-in user.
     def get_files(file_ids)
-      file_ids = [file_ids] unless file_ids.respond_to?(:join)
-      response = send_method(:get_files, 'files' => file_ids.join(','))
-      files_from response
+      file_ids = [file_ids] unless file_ids.is_a? Array
+      files = get_user_files
+      puts file_ids.class
+      files.delete_if {|f| file_ids.include?(f.file_id) == false}
     end
 
     def get_user_files(limit=nil, offset=nil)
@@ -108,7 +118,7 @@ module Divshare
         if tries > 0
           retry
         else
-          raise Divshare::ConnectionError, "Couldn't connect for '#{method}'"
+          raise Divshare::ConnectionError, "Couldn't connect for '#{method}' using #{post_args(method, args)}"
         end
       end
       response
