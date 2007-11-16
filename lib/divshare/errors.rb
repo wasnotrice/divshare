@@ -1,4 +1,11 @@
 module Divshare
-  class APIError < Exception; end
-  class ConnectionError < Exception; end
+  module Failure; end
+
+  class APIError < Exception
+    include Failure
+  end
+
+  class ConnectionError < Exception
+    include Failure
+  end
 end
