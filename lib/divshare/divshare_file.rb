@@ -42,7 +42,8 @@ module Divshare
     #
     # :size => :fullsize | :midsize | :thumb
     def embed_tag(opts={})
-      self.send("#{medium}_embed_tag_template", opts).gsub('[FILE ID]', @file_id)
+      return nil if @medium.nil?
+      self.send("#{@medium}_embed_tag_template", opts).gsub('[FILE ID]', @file_id)
     end
     
     def to_s

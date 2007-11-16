@@ -41,6 +41,10 @@ describe "A DivshareFile created without xml" do
   it "should set medium to nil" do
     @file.medium.should be_nil
   end
+  
+  it "should generate a nil embed tag" do
+    @file.embed_tag.should be_nil
+  end
 end
 
 describe "An audio DivshareFile" do
