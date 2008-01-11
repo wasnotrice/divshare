@@ -1,2 +1,4 @@
 syntax: glob
 pkg
+doc
+.DS_Store

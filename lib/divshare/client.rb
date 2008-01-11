@@ -9,12 +9,24 @@ require 'divshare/post_args'
 require 'divshare/user'
 
 module Divshare
+  # This is the main class for interacting with the Divshare API. Use it like this:
+  #
+  #   client = Divshare::Client.new(api_key, api_secret)
+  #   client.login(email, password)
+  #   files = client.get_files ['abcdefg-123', 'abcdefg-456']
+  #   upload_ticket = client.get_upload_ticket
+  #   client.logout
+  #
   class Client
     SUCCESS = '1'
     FAILURE = '0'
   
     attr_reader :api_key, :api_secret, :post_url, :api_session_key, :email, :password
-
+    
+    # Creates a Divshare::Client. The <tt>api_key</tt> and <tt>api_secret</tt>
+    # are required, but <tt>email</tt> and <tt>password</tt> are optional. If
+    # you omit <tt>email</tt> and <tt>password</tt> here, you must send them
+    # with link:login when you call it.
     def initialize(api_key, api_secret, email=nil, password=nil)
       @api_key, @api_secret, @email, @password = api_key, api_secret, email, password
       @api_session_key = nil
@@ -45,6 +57,8 @@ module Divshare
       get_files(file_id).first
     end
 
+    # Returns an array of Divshare::DivshareFile objects belonging to the logged-in user. Use <tt>limit</tt> and
+    # <tt>offset</tt> to narrow things down.
     def get_user_files(limit=nil, offset=nil)
       args = {}
       args['limit'] = limit unless limit.nil?
@@ -53,6 +67,8 @@ module Divshare
       files_from response
     end
     
+    # Returns an array of Divshare::DivshareFile objects in the specified folder. Use <tt>limit</tt> and
+    # <tt>offset</tt> to narrow things down. 
     def get_folder_files(folder_id, limit=nil, offset=nil)
       args = {}
       args['limit'] = limit unless limit.nil?
@@ -62,16 +78,22 @@ module Divshare
       files_from response
     end
 
+    # Returns information about the logged-in user
     def get_user_info
       response = send_method :get_user_info
       user_from response
     end
     
+    # Returns an upload ticket string for use in uploading files. See
+    # http://www.divshare.com/integrate/api#uploading for more information on
+    # how to use the upload ticket once you've got it.
     def get_upload_ticket
       response = send_method :get_upload_ticket
       upload_ticket_from response
     end
 
+    # Login to the Divshare service. Raises Divshare::APIError if login is
+    # unsuccessful.
     def login(email=nil, password=nil)
       logout if @api_session_key
       email ||= @email
@@ -84,8 +106,8 @@ module Divshare
       end
     end
 
-    # Returns true if logout is successful. Accepts '1' or 'true' as
-    # successful response. 
+    # Returns true if logout is successful. Raises Divshare::APIError if logout is
+    # unsuccessful.
     def logout
       response = send_method(:logout)
       if response.at(:logged_out) && (%w(true 1).include? response.at(:logged_out).inner_html)
@@ -96,6 +118,8 @@ module Divshare
       true
     end
 
+    # Generates the required MD5 signature as described in
+    # http://www.divshare.com/integrate/api#sig
     def sign(method, args)
       Digest::MD5.hexdigest(string_to_sign(args))
     end
