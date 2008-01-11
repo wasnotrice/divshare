@@ -1,6 +1,6 @@
 module Divshare
   # This is a simple hash that initializes itself in a state appropriate to
-  # the request. Converts all keys to strings.
+  # the request. Converts all keys and values to strings.
   class PostArgs < Hash
     def initialize(client, method, args)
       post_args = args.merge({'method' => method, 'api_key' => client.api_key})

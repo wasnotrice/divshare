@@ -132,6 +132,47 @@ describe "A Divshare Client getting user files" do
     @client.get_user_files
   end
   
+  it "should generate arguments for post with limit and offset" do
+    PostArgs.should_receive(:new).with(@client, :get_user_files, {"limit" => 5, "offset" => 2})
+    @client.get_user_files(5, 2)
+  end
+  
+end
+
+describe "A Divshare Client getting folder files" do
+  include ClientSpecHelper
+  before(:each) do
+   common_setup
+   @mock_response.should_receive(:body).and_return(get_two_files_xml)
+  end
+
+  it "should return an array of files" do
+    @client.get_folder_files('12345').map {|f| f.class }.should == [DivshareFile, DivshareFile]
+  end
+  
+  # If it generates a PostArgs object, it's doing the right thing
+  it "should generate arguments for post" do
+    PostArgs.should_receive(:new).with(@client,:get_folder_files, {'folder_id' => '12345'})
+    @client.get_folder_files('12345')
+  end
+
+  it "should generate arguments for post with limit and offset" do
+    PostArgs.should_receive(:new).with(@client, :get_folder_files, {'folder_id' => '12345', "limit" => 5, "offset" => 2})
+    @client.get_folder_files('12345', 5, 2)
+  end
+  
+
+end
+
+describe "A Divshare Client, creating an upload ticket" do
+  include ClientSpecHelper
+  before(:each) do
+    common_setup
+    @mock_response.should_receive(:body).and_return(get_upload_ticket_xml)
+  end
+  it "should return an upload ticket" do
+    @client.get_upload_ticket.should == '123-abcdefghijkl'
+  end
 end
 
 describe "A Divshare Client, logging in" do
@@ -139,7 +180,7 @@ describe "A Divshare Client, logging in" do
   before(:each) do
     common_setup(:login => false)
     @api_session_key = login(new_client)
-    @mock_response.should_receive(:body).and_return(login_xml)
+    @mock_response.should_receive(:body).and_return(successful_login_xml)
   end
 
   it "should login" do
@@ -153,11 +194,20 @@ describe "A Divshare Client, logging in" do
   end
 end
 
+describe "A DivshareClient, unsuccessfully logging in" do
+  include ClientSpecHelper
+  it "should raise Divshare::APIError" do
+    common_setup(:login => false)
+    @mock_response.should_receive(:body).and_return(error_xml("Couldn't log in"))
+    lambda {@client.login}.should raise_error(Divshare::APIError)
+  end
+end
+
 describe "A Divshare Client, logging out" do
   include ClientSpecHelper
   before(:each) do
     common_setup
-    @mock_response.should_receive(:body).and_return(logout_xml)
+    @mock_response.should_receive(:body).and_return(successful_logout_xml)
   end
 
   it "should logout" do

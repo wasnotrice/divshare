@@ -52,10 +52,24 @@ module Divshare
       response = send_method(:get_user_files, args)
       files_from response
     end
+    
+    def get_folder_files(folder_id, limit=nil, offset=nil)
+      args = {}
+      args['limit'] = limit unless limit.nil?
+      args['offset'] = offset unless offset.nil?
+      args['folder_id'] = folder_id
+      response = send_method(:get_folder_files, args)
+      files_from response
+    end
 
     def get_user_info
       response = send_method :get_user_info
       user_from response
+    end
+    
+    def get_upload_ticket
+      response = send_method :get_upload_ticket
+      upload_ticket_from response
     end
 
     def login(email=nil, password=nil)
@@ -97,7 +111,11 @@ module Divshare
       xml = xml.at(:user_info)
       Divshare::User.new(xml)
     end
-
+    
+    def upload_ticket_from(xml)
+      xml = xml.at(:upload_ticket).inner_html
+    end
+    
     # Since login and logout aren't easily re-nameable to use method missing
     def send_method(method_id, *params)
       response = http_post(method_id, *params)

@@ -111,7 +111,7 @@ module DivshareMockXML
     EOS
   end
 
-  def login_xml
+  def successful_login_xml
     <<-EOS
     <?xml version="1.0" encoding="UTF-8"?>
     <response status="1">
@@ -120,11 +120,29 @@ module DivshareMockXML
     EOS
   end
   
-  def logout_xml
+  def successful_logout_xml
     <<-EOS
     <?xml version="1.0" encoding="UTF-8"?>
     <response status="1">
         <logged_out>true</logged_out>
+    </response>
+    EOS
+  end
+  
+  def error_xml(message)
+    <<-EOS
+    <?xml version="1.0" encoding="UTF-8"?>
+    <response status="0">
+        <error>#{message}</error>
+    </response>
+    EOS
+  end
+  
+  def get_upload_ticket_xml
+    <<-EOS
+    <?xml version="1.0" encoding="UTF-8"?>
+    <response status="1">
+        <upload_ticket>123-abcdefghijkl</upload_ticket>
     </response>
     EOS
   end
