@@ -2,12 +2,20 @@ require 'rubygems'
 require 'hpricot'
 
 module Divshare
+  # This class represents a file stored at Divshare. Queries from a 
+  # Divshare::Client to the API return arrays of DivshareFile objects. You 
+  # can gather any information provided by the API from this object, as well 
+  # as generate a tag for embedding the file in HTML.
+  #
+  # The proper embed tag depends on the file type. The Divshare API doesn't
+  # distinguish these different filetypes, however, so this library tries to 
+  # figure out the filetype from the file's extension. 
   class DivshareFile
     ATTRIBUTES = %w(file_id file_name file_description file_size downloads last_downloaded_at uploaded_at folder_title folder_id)
     AUDIO = /^\.(mp3)$/i
     VIDEO = /^\.(avi|wmv|mov|mpg|asf)$/i
     DOCUMENT = /^\.(doc|pdf|ppt)$/i
-    IMAGE = /^\.(jpg|gif|png)/i
+    IMAGE = /^\.(jpg|gif|png)$/i
     
     attr_reader *ATTRIBUTES
     attr_reader :medium
