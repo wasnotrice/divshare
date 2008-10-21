@@ -7,10 +7,6 @@ module ClientSpecHelper
   def new_client
     Client.new('api_key', 'api_secret')
   end
-
-  def new_client_with_email_and_password
-    Client.new('api_key', 'api_secret', 'email', 'password')
-  end
   
   def login(client, api_session_key='123-abcdefghijkl')
     client.stub!(:login).and_return(api_session_key)
@@ -39,22 +35,24 @@ end
 
 describe "A new Divshare Client" do
   include ClientSpecHelper
+  before :each do
+    common_setup
+  end
 
   it "should be created with api key and secret only" do
-    new_client.should be_instance_of(Divshare::Client)
+    @client.should be_instance_of(Divshare::Client)
   end
   
-  it "should be created with api key, api_secret, email, and password" do
-    new_client_with_email_and_password.should be_instance_of(Divshare::Client)
+  it "should assign api key correctly" do
+    @client.api_key.should == 'api_key'
   end
   
-  it "should assign api key, api_secret, email, and password correctly" do
-    client = new_client_with_email_and_password
-    [client.api_key, client.api_secret, client.email, client.password].should == ['api_key', 'api_secret', 'email', 'password']
+  it "should assign api secret correctly" do
+    @client.api_secret.should == 'api_secret'
   end
   
   it "should know the proper post url" do
-    new_client.post_url.should == "http://www.divshare.com/api/"
+    Divshare::Client::API_URL.should == "http://www.divshare.com/api/"
   end
   
   # Using string 'api_secret123-abcdefghijklfiles2734485-1fc'
@@ -67,7 +65,7 @@ describe "A new Divshare Client" do
   it "should raise Divshare::ConnectionError on timeout" do
     # Net::HTTP.should_receive(:post_form).once.and_raise
     Net::HTTP.stub!(:post_form).and_raise(Net::HTTPServerError)
-    lambda { new_client_with_email_and_password.login }.should raise_error(Divshare::ConnectionError)
+    lambda { @client.login('email', 'password') }.should raise_error(Divshare::ConnectionError)
   end
   
 end
