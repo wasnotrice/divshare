@@ -2,9 +2,10 @@ require 'cgi'
 require 'net/http'
 require 'hpricot'
 require 'digest/md5'
-require 'divshare/multipart'
-require 'divshare/errors'
 require 'divshare/divshare_file'
+require 'divshare/encoder'
+require 'divshare/errors'
+require 'divshare/multipart'
 require 'divshare/user'
 
 module Divshare
@@ -25,24 +26,23 @@ module Divshare
     SUCCESS = '1'
     FAILURE = '0'
   
-    attr_reader :api_key, :api_secret, :api_session_key
     attr_accessor :debug # If true, extended debugging information is printed
 
-    def initialize(api_key, api_secret, session_key=nil)
-      @api_key, @api_secret, @api_session_key = api_key, api_secret, session_key
+    def initialize(key, secret)
+      @encoder = Encoder.new(key, secret)
     end
 
     def login(email, password)
-      logout if @api_session_key
+      logout if @encoder.session_key
       response = send_method(:login, {'user_email' => email, 'user_password' => password})
-      @api_session_key = response.at(:api_session_key).inner_html
+      @encoder.session_key = response.at(:api_session_key).inner_html
     end
 
     # Returns true if logout is successful. 
     def logout
       response = send_method(:logout)
       if response.at(:logged_out).inner_html == SUCCESS
-        @api_session_key = nil
+        @encoder.session_key = nil
         true
       else
         false
@@ -194,39 +194,12 @@ module Divshare
       response
     end
    
+    # Generates arguments in the proper format for POST to DivShare server.
+    # See Divshare::PostArgs
     def post_args(method, args)
-      all_args = args.merge({'method' => method, 'api_key' => api_key})
-      if @api_session_key #&& method.to_sym != :logout
-        api_sig = sign(all_args)
-        all_args.merge!({'api_session_key' => @api_session_key, 'api_sig' => api_sig})
-      end
-      str_args = {}
-      all_args.each { |k,v| str_args[k.to_s] = v.to_s }
-      str_args
+      PostArgs.new(self, method, args)
     end
- 
-    # Generates the required MD5 signature as described in
-    # http://www.divshare.com/integrate/api#sig
-    def sign(args)
-      Digest::MD5.hexdigest(string_to_sign(args))
-    end
-    
-    # From http://www.divshare.com/integrate/api
-    #
-    # * Your secret key is 123-secret. 
-    # * Your session key is 456-session. 
-    # * You are using the get_user_files method, and you're sending the
-    #   parameters limit=5 and offset=10.
-    #
-    # The string used to create your signature will be:
-    # 123-secret456-sessionlimit5offset10. Note that the parameters must be in
-    # alphabetical order, so limit always comes before offset. Each parameter
-    # should be paired with its value as shown.
-    def string_to_sign(args)
-      args_for_string = args.dup.delete_if {|k,v| %w(api_key method api_sig api_session_key).include?(k) }
-      "#{@api_secret}#{@api_session_key}#{args_for_string.to_a.sort.flatten.join}"
-    end
-    
+     
     # Outputs whatever is given to $stderr if debugging is enabled.
     def debug(*args)
       $stderr.puts(sprintf(*args)) if @debug

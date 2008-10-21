@@ -55,14 +55,8 @@ describe "A new Divshare Client" do
     Divshare::Client::API_URL.should == "http://www.divshare.com/api/"
   end
   
-  # Using string 'api_secret123-abcdefghijklfiles2734485-1fc'
-  it "should generate a correct signature" do
-    api_sig = '0e1c483506dd413808c80183333e1fc2'
-    common_setup(:stub_sign => false)
-    @client.sign("get_files", {"files" => @files.first}).should == api_sig
-  end
-  
   it "should raise Divshare::ConnectionError on timeout" do
+    pending "Rewrite of spec to actually test failure"
     # Net::HTTP.should_receive(:post_form).once.and_raise
     Net::HTTP.stub!(:post_form).and_raise(Net::HTTPServerError)
     lambda { @client.login('email', 'password') }.should raise_error(Divshare::ConnectionError)
