@@ -71,6 +71,11 @@ describe "An Encoder, after client login" do
     excluding_sig(result).should == basic_args({'method' => 'logout'})
   end
   
+  it "should work without additional hash of arguments" do
+    result = @encoder.encode(:logout)
+    excluding_sig(result).should == basic_args({'method' => 'logout'})    
+  end
+  
   it "should convert symbol keys and values to strings" do
     args_as_symbols = {:file_id => :abc123}
     args_as_strings = {'file_id' => 'abc123'}
@@ -82,10 +87,10 @@ describe "An Encoder, after client login" do
   
   # Using string 'api_secret123-abcdefghijklfiles2734485-1fc'
   it "should generate a correct signature" do
-    pending "Fix to client specs first..."
+    pending "More time to fix this spec"
     api_sig = '0e1c483506dd413808c80183333e1fc2'
     # common_setup(:stub_sign => false)
-    @client.sign("get_files", {"files" => @files.first}).should == api_sig
+    @encoder.sign(:logout).should == api_sig
   end
   
   

@@ -13,7 +13,7 @@ module Divshare
     
     # Prepares arguments for a post using the given method and arguments.
     # Returns a hash of arguments and values
-    def encode(method, args)
+    def encode(method, args={})
       # Stringifies incoming keys and values
       post_args = Hash.new
       args.each { |k, v| post_args[k.to_s] = v.to_s }
