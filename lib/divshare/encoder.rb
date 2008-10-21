@@ -4,6 +4,7 @@ module Divshare
   # Takes care of organizing arguments and generating API signatures for
   # requests 
   class Encoder # :nodoc:
+    attr_reader :key, :secret
     attr_accessor :session_key
 
     def initialize(key, secret)
@@ -12,15 +13,15 @@ module Divshare
     
     # Prepares arguments for a post using the given method and arguments.
     # Returns a hash of arguments and values
-    def prepare(method, args)
-      temp_args = args.merge({'method' => method, 'api_key' => key})
-      if @session_key #&& method.to_sym != :logout
-        api_sig = sign(temp_args)
-        temp_args.merge!({'api_session_key' => session_key, 'api_sig' => api_sig})
-      end
-      # Stringify keys and values
+    def encode(method, args)
+      # Stringifies incoming keys and values
       post_args = Hash.new
-      temp_args.each { |k, v| post_args[k.to_s] = v.to_s }
+      args.each { |k, v| post_args[k.to_s] = v.to_s }
+      post_args.merge!({'method' => method.to_s, 'api_key' => @key.to_s})
+      if @session_key
+        sig = sign(post_args)
+        post_args.merge!({'api_session_key' => @session_key.to_s, 'api_sig' => sig})
+      end
       post_args
     end
 

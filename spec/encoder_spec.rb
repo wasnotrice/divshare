@@ -5,51 +5,79 @@ include Divshare
 
 module EncoderSpecHelper
   def basic_args(to_merge={})
-    {'api_key' => 'api_key', "api_sig" => 'api_sig', "api_session_key" => 'api_session_key'}.merge(to_merge)
+    {'api_key' => 'api_key', "api_session_key" => 'api_session_key'}.merge(to_merge)
   end
   
   def login_args(to_merge={})
-    strip_key_and_sig(to_merge).merge({'method' => 'login'})
+    args = basic_args(to_merge).reject { |k,v| %w(api_session_key).include? k }
+    args.merge({'method' => 'login'})
   end
   
   def logout_args(to_merge={})
-    strip_key_and_sig(to_merge).merge({'method' => 'logout'})
+    basic_args.merge({'method' => 'logout'})
   end
   
-  def strip_key_and_sig(to_merge={})
-    basic_args(to_merge).reject { |k,v| %w(api_session_key api_sig).include? k }
+  def excluding_sig(hash)
+    return hash.reject {|k,v| k == 'api_sig'}
+  end
+  
+  def common_setup
+    @key = 'api_key'
+    @secret = 'api_secret'
+    @encoder = Encoder.new(@key, @secret)
+    # @client = mock('client')
+    # @client.should_receive(:api_key).and_return('api_key')
+    @login = {'user_email' => 'email', 'user_password' => 'password'}
+    @login_as_symbols = {:user_email => :email, :user_password => :password}
   end
 end
 
-describe "A Encoder" do
+describe "An Encoder" do
   include EncoderSpecHelper
+  
   before(:each) do
-    @client = mock('client')
-    @client.should_receive(:api_key).and_return('api_key')
-    @login = {'user_email' => 'email', 'user_password' => 'password'}
+    common_setup
   end
-    
+  
+  it "should record key" do
+    @encoder.key.should == @key
+  end
+  
+  it "should record secret" do
+    @encoder.secret.should == @secret
+  end
+  
   it "should generate appropriate arguments for login" do
-    @client.should_receive(:api_session_key).and_return(nil)
-    Encoder.new(@client,'login',@login).should == login_args(@login)
+    @encoder.encode(:login, @login).should == login_args(@login)
+  end
+  
+  it "should stringify keys and values for login" do
+    @encoder.encode(:login, @login_as_symbols).should == login_args(@login)
+  end
+  
+end
+
+describe "An Encoder, after client login" do
+  include EncoderSpecHelper
+  
+  before(:each) do
+    common_setup
+    # Simulates login
+    @encoder.session_key = 'api_session_key'
   end
   
   it "should generate appropriate arguments for logout" do
-    @client.should_receive(:api_session_key).twice.and_return('api_session_key')
-    @client.should_receive(:sign).and_return('api_sig')
-    Encoder.new(@client,:logout,{}).should == basic_args({'method' => 'logout'})
+    result = @encoder.encode(:logout,{})
+    excluding_sig(result).should == basic_args({'method' => 'logout'})
   end
   
-  it "should convert symbol keys to strings" do
-    @client.should_receive(:api_session_key).and_return(nil)
-    symbol_keys = {}
-    @login.each { |k,v| symbol_keys[k.to_sym] = v }
-    Encoder.new(@client,'login',symbol_keys).should == login_args(@login)
-  end
-  
-  it "should convert symbol values to strings" do
-    @client.should_receive(:api_session_key).and_return(nil)
-    Encoder.new(@client,:login,@login).should == login_args(@login)
+  it "should convert symbol keys and values to strings" do
+    args_as_symbols = {:file_id => :abc123}
+    args_as_strings = {'file_id' => 'abc123'}
+    result = @encoder.encode(:get_files, args_as_symbols)
+    expected = basic_args.merge(args_as_strings)
+    expected.merge!("method" => "get_files")
+    excluding_sig(result).should == expected
   end
   
   # Using string 'api_secret123-abcdefghijklfiles2734485-1fc'
