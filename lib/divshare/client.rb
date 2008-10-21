@@ -1,11 +1,10 @@
-require 'rubygems'
 require 'cgi'
 require 'net/http'
 require 'hpricot'
 require 'digest/md5'
+require 'divshare/multipart'
 require 'divshare/errors'
 require 'divshare/divshare_file'
-require 'divshare/post_args'
 require 'divshare/user'
 
 module Divshare
@@ -18,19 +17,36 @@ module Divshare
   #   client.logout
   #
   class Client
+    
+    API_URL = 'http://www.divshare.com/api/'
+    UPLOAD_URL = 'http://upload.divshare.com'
+    UPLOAD_PATH = '/api/upload'
+    
     SUCCESS = '1'
     FAILURE = '0'
   
-    attr_reader :api_key, :api_secret, :post_url, :api_session_key, :email, :password
-    
-    # Creates a Divshare::Client. The <tt>api_key</tt> and <tt>api_secret</tt>
-    # are required, but <tt>email</tt> and <tt>password</tt> are optional. If
-    # you omit <tt>email</tt> and <tt>password</tt> here, you must send them
-    # with link:login when you call it.
-    def initialize(api_key, api_secret, email=nil, password=nil)
-      @api_key, @api_secret, @email, @password = api_key, api_secret, email, password
-      @api_session_key = nil
-      @post_url = "http://www.divshare.com/api/"
+    attr_reader :api_key, :api_secret, :api_session_key
+    attr_accessor :debug # If true, extended debugging information is printed
+
+    def initialize(api_key, api_secret, session_key=nil)
+      @api_key, @api_secret, @api_session_key = api_key, api_secret, session_key
+    end
+
+    def login(email, password)
+      logout if @api_session_key
+      response = send_method(:login, {'user_email' => email, 'user_password' => password})
+      @api_session_key = response.at(:api_session_key).inner_html
+    end
+
+    # Returns true if logout is successful. 
+    def logout
+      response = send_method(:logout)
+      if response.at(:logged_out).inner_html == SUCCESS
+        @api_session_key = nil
+        true
+      else
+        false
+      end
     end
 
     # file_ids should be an array of file ids
@@ -45,6 +61,7 @@ module Divshare
     # logged-in user.
     def get_files(file_ids)
       file_ids = [file_ids] unless file_ids.is_a? Array
+      debug "DivShare.get_files(): #{file_ids.class}"
       files = get_user_files
       puts file_ids.class
       files.delete_if {|f| file_ids.include?(f.file_id) == false}
@@ -80,51 +97,63 @@ module Divshare
 
     # Returns information about the logged-in user
     def get_user_info
-      response = send_method :get_user_info
-      user_from response
+      response = send_method(:get_user_info)
+      user_from(response)
     end
     
     # Returns an upload ticket string for use in uploading files. See
     # http://www.divshare.com/integrate/api#uploading for more information on
     # how to use the upload ticket once you've got it.
     def get_upload_ticket
-      response = send_method :get_upload_ticket
-      upload_ticket_from response
+      send_method(:get_upload_ticket).at(:upload_ticket).inner_html
     end
 
-    # Login to the Divshare service. Raises Divshare::APIError if login is
-    # unsuccessful.
-    def login(email=nil, password=nil)
-      logout if @api_session_key
-      email ||= @email
-      password ||= @password
-      response = send_method(:login, {'user_email' => email, 'user_password' => password})
-      if response.at(:api_session_key)
-        @api_session_key = response.at(:api_session_key).inner_html
+    # Uploads a file or files to the user's DivShare account, and returns the
+    # file id(s). 
+    #
+    # The DivShare API is written for use with actual HTML forms, so the API
+    # method requires a 'response_url', and makes a GET request to that url,
+    # sending the file id(s) as query parameters.
+    #
+    # Here, we're simulating the form, so we parse DivShare's GET request and
+    # simply return the file id(s). In this case, response_url is just a 
+    # filler so that the server doesn't complain.
+    def upload(ticket, file_path, response_url='www.divshare.com/upload_result')      
+      location = nil
+      File.open(file_path, 'r') { |file|
+        uri = URI.parse(UPLOAD_URL)
+        http = Net::HTTP.new(uri.host, uri.port)
+        # API methods can be SLOW. Timeout interval should be long.
+        http.read_timeout = 15*60
+        request = Net::HTTP::Post.new(UPLOAD_PATH)
+        fields = Hash.new
+        fields['upload_ticket'] = ticket
+        # API doesn't allow blank response_url. This is just filler.
+        fields['response_url'] = response_url
+
+        fields['file1'] = file
+        request.multipart_params = fields
+        # Until DivShare supports direct upload API, we deal with its response location field
+        location = http.request(request)['location']
+      }
+      
+      # if error, throw, otherwise return file ID for caller to do whatever they like
+      resp = {}
+      location.split('?')[1].split('&').each { |param| 
+        k, v = param.split('=', 2)  # some params could contain two '=' for some reason
+        resp[k]=CGI.unescape(v)
+      }
+      if resp['error']
+        raise Divshare::APIError, resp['description']
       else
-        raise Divshare::APIError, "Couldn't log in. Received: \n" + response.to_s
+        resp['file1']   # return the file ID
       end
     end
 
-    # Returns true if logout is successful. Raises Divshare::APIError if logout is
-    # unsuccessful.
-    def logout
-      response = send_method(:logout)
-      if response.at(:logged_out) && (%w(true 1).include? response.at(:logged_out).inner_html)
-        @api_session_key = nil
-      else
-        raise Divshare::APIError, "Couldn't log out. Received: \n" + response.to_s
-      end
-      true
-    end
 
-    # Generates the required MD5 signature as described in
-    # http://www.divshare.com/integrate/api#sig
-    def sign(method, args)
-      Digest::MD5.hexdigest(string_to_sign(args))
-    end
 
     private
+    
     def files_from(xml)
       xml = xml/:file
       xml = [xml] unless xml.respond_to?(:each)    
@@ -136,11 +165,6 @@ module Divshare
       Divshare::User.new(xml)
     end
     
-    def upload_ticket_from(xml)
-      xml = xml.at(:upload_ticket).inner_html
-    end
-    
-    # Since login and logout aren't easily re-nameable to use method missing
     def send_method(method_id, *params)
       response = http_post(method_id, *params)
       xml = Hpricot(response).at(:response)
@@ -149,28 +173,42 @@ module Divshare
         raise Divshare::APIError, errors.join("\n")
       end
       xml
-    end      
-    
-    def post_args(method, args)
-      PostArgs.new(self, method, args)
     end
-    
+
     def http_post(method, args={})
-      url = URI.parse(@post_url)
+      url = URI.parse(API_URL)
       tries = 3
       response = ""
+      form_args = post_args(method, args)
       begin
-        response = Net::HTTP.post_form(url, post_args(method, args)).body
+        response = Net::HTTP.post_form(url, form_args).body
       rescue
         tries -= 1
-          puts "Tries == '#{tries}'"
+          debug "DivShare.http_post(): Tries == '#{tries}'"
         if tries > 0
           retry
         else
-          raise Divshare::ConnectionError, "Couldn't connect for '#{method}' using #{post_args(method, args)}"
+          raise Divshare::ConnectionError, "Couldn't connect for '#{method}' using #{form_args}"
         end
       end
       response
+    end
+   
+    def post_args(method, args)
+      all_args = args.merge({'method' => method, 'api_key' => api_key})
+      if @api_session_key #&& method.to_sym != :logout
+        api_sig = sign(all_args)
+        all_args.merge!({'api_session_key' => @api_session_key, 'api_sig' => api_sig})
+      end
+      str_args = {}
+      all_args.each { |k,v| str_args[k.to_s] = v.to_s }
+      str_args
+    end
+ 
+    # Generates the required MD5 signature as described in
+    # http://www.divshare.com/integrate/api#sig
+    def sign(args)
+      Digest::MD5.hexdigest(string_to_sign(args))
     end
     
     # From http://www.divshare.com/integrate/api
@@ -187,6 +225,11 @@ module Divshare
     def string_to_sign(args)
       args_for_string = args.dup.delete_if {|k,v| %w(api_key method api_sig api_session_key).include?(k) }
       "#{@api_secret}#{@api_session_key}#{args_for_string.to_a.sort.flatten.join}"
+    end
+    
+    # Outputs whatever is given to $stderr if debugging is enabled.
+    def debug(*args)
+      $stderr.puts(sprintf(*args)) if @debug
     end
   end
 end

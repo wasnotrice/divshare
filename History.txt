@@ -2,3 +2,8 @@
 
 * 1 major enhancement:
   * Initial release
+
+== 0.2.0 2008-10-20
+
+* 1 major enhancement:
+  * Added file uploading (thanks to Philip)

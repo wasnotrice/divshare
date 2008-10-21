@@ -9,7 +9,7 @@ lib/divshare.rb
 lib/divshare/client.rb
 lib/divshare/divshare_file.rb
 lib/divshare/errors.rb
-lib/divshare/post_args.rb
+lib/divshare/multipart.rb
 lib/divshare/user.rb
 lib/divshare/version.rb
 log/debug.log
