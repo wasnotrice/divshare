@@ -31,7 +31,19 @@ module Divshare
     def initialize(key, secret)
       @encoder = Encoder.new(key, secret)
     end
+    
+    def key
+      @encoder.key
+    end
+    
+    def secret
+      @encoder.secret
+    end
 
+    def session_key
+      @encoder.session_key
+    end
+    
     def login(email, password)
       logout if @encoder.session_key
       response = send_method(:login, {'user_email' => email, 'user_password' => password})
@@ -74,8 +86,9 @@ module Divshare
       get_files(file_id).first
     end
 
-    # Returns an array of Divshare::DivshareFile objects belonging to the logged-in user. Use <tt>limit</tt> and
-    # <tt>offset</tt> to narrow things down.
+    # Returns an array of Divshare::DivshareFile objects belonging to the
+    # logged-in user. Use <tt>limit</tt> and <tt>offset</tt> to narrow things
+    # down.
     def get_user_files(limit=nil, offset=nil)
       args = {}
       args['limit'] = limit unless limit.nil?
@@ -84,8 +97,8 @@ module Divshare
       files_from response
     end
     
-    # Returns an array of Divshare::DivshareFile objects in the specified folder. Use <tt>limit</tt> and
-    # <tt>offset</tt> to narrow things down. 
+    # Returns an array of Divshare::DivshareFile objects in the specified
+    # folder. Use <tt>limit</tt> and <tt>offset</tt> to narrow things down. 
     def get_folder_files(folder_id, limit=nil, offset=nil)
       args = {}
       args['limit'] = limit unless limit.nil?
@@ -179,7 +192,7 @@ module Divshare
       url = URI.parse(API_URL)
       tries = 3
       response = ""
-      form_args = post_args(method, args)
+      form_args = @encoder.encode(method, args)
       begin
         response = Net::HTTP.post_form(url, form_args).body
       rescue
@@ -194,12 +207,6 @@ module Divshare
       response
     end
    
-    # Generates arguments in the proper format for POST to DivShare server.
-    # See Divshare::PostArgs
-    def post_args(method, args)
-      PostArgs.new(self, method, args)
-    end
-     
     # Outputs whatever is given to $stderr if debugging is enabled.
     def debug(*args)
       $stderr.puts(sprintf(*args)) if @debug

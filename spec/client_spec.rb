@@ -9,8 +9,8 @@ module ClientSpecHelper
   end
   
   def login(client, api_session_key='123-abcdefghijkl')
-    client.stub!(:login).and_return(api_session_key)
-    client.instance_variable_set(:@api_session_key, client.login)
+    # client.stub!(:login).and_return(api_session_key)
+    # client.instance_variable_set(:@api_session_key, client.login)
     api_session_key
   end
   
@@ -25,6 +25,7 @@ module ClientSpecHelper
       @client.stub!(:sign).and_return(@api_sig)
     end
     @mock_response = mock('response')
+    Net::HTTP.stub!(:post_form).with(Divshare::Client::API_URL, {"api_key"=>"api_key", "method"=>"login"}).and_return('123-abcdefghijkl')
     Net::HTTP.stub!(:post_form).and_return(@mock_response)
   end
   
@@ -43,14 +44,6 @@ describe "A new Divshare Client" do
     @client.should be_instance_of(Divshare::Client)
   end
   
-  it "should assign api key correctly" do
-    @client.api_key.should == 'api_key'
-  end
-  
-  it "should assign api secret correctly" do
-    @client.api_secret.should == 'api_secret'
-  end
-  
   it "should know the proper post url" do
     Divshare::Client::API_URL.should == "http://www.divshare.com/api/"
   end
@@ -64,21 +57,20 @@ describe "A new Divshare Client" do
   
 end
 
+describe Divshare::Client, "making a request to the API" do
+  # spec the request format. This should suffice for all requests.
+  
+end
+
 describe "A Divshare Client getting one file" do
   include ClientSpecHelper
   before(:each) do
     common_setup
   end
-
-  # If it generates a PostArgs object, it's doing the right thing
-  it "should generate arguments for post" do
-    pending("Fix to API that allows correct get_files method")
-    @mock_response.should_receive(:body).and_return(get_one_file_xml)
-    PostArgs.should_receive(:new).with(@client,:get_files,{'files' => @files.first})
-    @client.get_files(@files.first)
-  end
   
   it "should return an array of one DivshareFile when requesting a file through get_files" do
+    args = {"api_sig"=>"068a897f04bfa66fa56cf83e023fbb85", "api_key"=>"api_key", "method"=>"get_user_files", "api_session_key"=>"123-abcdefghijkl"}
+    Net::HTTP.should_receive(:post_form).with(Divshare::Client::API_URL, args)
     @mock_response.should_receive(:body).and_return(get_one_file_xml)
     @client.get_files('123456-abc').map {|f| f.class}.should == [DivshareFile]
   end
@@ -118,14 +110,13 @@ describe "A Divshare Client getting user files" do
     @client.get_user_files.map {|f| f.class }.should == [DivshareFile, DivshareFile]
   end
   
-  # If it generates a PostArgs object, it's doing the right thing
-  it "should generate arguments for post" do
-    PostArgs.should_receive(:new).with(@client,:get_user_files, {})
+  it "should send method and args to encoder" do
+    Encoder.should_receive(:encode).with(:get_user_files, {})
     @client.get_user_files
   end
   
-  it "should generate arguments for post with limit and offset" do
-    PostArgs.should_receive(:new).with(@client, :get_user_files, {"limit" => 5, "offset" => 2})
+  it "should send method and args, including limit and offset, to encoder" do
+    Encoder.should_receive(:encode).with(:get_user_files, {"limit" => 5, "offset" => 2})
     @client.get_user_files(5, 2)
   end
   
@@ -175,14 +166,10 @@ describe "A Divshare Client, logging in" do
     @mock_response.should_receive(:body).and_return(successful_login_xml)
   end
 
-  it "should login" do
-    @client.login.should == @api_session_key
-  end
-  
   it "should set api session key" do
-    @client.api_session_key.should be_nil
-    @client.login
-    @client.api_session_key.should == @api_session_key
+    @client.session_key.should be_nil
+    @client.login(@username, @password)
+    @client.session_key.should == @api_session_key
   end
 end
 
@@ -202,12 +189,16 @@ describe "A Divshare Client, logging out" do
     @mock_response.should_receive(:body).and_return(successful_logout_xml)
   end
 
-  it "should logout" do
+  it "should return true on successful logout" do
     @client.logout.should be_true
+  end
+  
+  it "should return false on unsuccessful logout" do
+    pending "Construction of unsuccessful logout xml"
   end
   
   it "should remove api session key on logout" do
     @client.logout
-    @client.api_session_key.should be_nil
+    @client.session_key.should be_nil
   end
 end
