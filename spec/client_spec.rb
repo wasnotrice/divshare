@@ -7,7 +7,8 @@ module ClientSpecHelper
  
   # Each setup must declare what @mock_response will return
   def common_setup()
-    @client = Client.new('api_key', 'api_secret')
+    @api_key = 'api_key'
+    @api_secret = 'api_secret'
     @api_session_key = '123-abcdefghijkl'
     @user_email = 'fake_user_email'
     @password = 'fake_password'
@@ -18,22 +19,27 @@ module ClientSpecHelper
   def no_login_setup
     @mock_response = mock('response')
     Net::HTTP.should_receive(:post_form).once.and_return(@mock_response)       
+    @client = Client.new(@api_key, @api_secret)
   end
   
-  # Stubs out login action separately
   def login_setup
     @mock_response = mock('response')
     @mock_login_response = mock('login_response')
     Net::HTTP.should_receive(:post_form).twice.and_return(@mock_login_response, @mock_response)   
     @mock_login_response.should_receive(:body).and_return(successful_login_xml)
+    @client = Client.new(@api_key, @api_secret)
     @client.login(@user_email, @password)
   end
 end
 
 describe "A new Divshare Client" do
   include ClientSpecHelper
-  before :each do
+  before :all do
     common_setup
+  end
+  
+  before :each do
+    @client = Client.new(@api_key, @api_secret)
   end
 
   it "should be created successfully" do
@@ -58,7 +64,7 @@ end
 
 describe "A Divshare Client getting one file" do
   include ClientSpecHelper
-  before(:each) do
+  before(:all) do
     common_setup
   end
   
@@ -75,14 +81,18 @@ describe "A Divshare Client getting one file" do
   end
   
   it "should raise ArgumentError if an array is passed to get_file" do
+    @client = Client.new(@api_key, @api_secret)
     lambda {@client.get_file(['123456-abc'])}.should raise_error(ArgumentError)
   end
 end
 
 describe "A Divshare Client getting two files" do
   include ClientSpecHelper
-  before(:each) do
+  before(:all) do
     common_setup
+  end
+
+  before :each do
     login_setup
     @mock_response.should_receive(:body).and_return(get_two_files_xml)
   end
@@ -94,10 +104,13 @@ end
 
 describe "A Divshare Client getting user files" do
   include ClientSpecHelper
-  before(:each) do
+  before :all do
    common_setup
-   login_setup
-   @mock_response.should_receive(:body).and_return(get_two_files_xml)
+  end
+
+  before :each do
+    login_setup
+    @mock_response.should_receive(:body).and_return(get_two_files_xml)
   end
 
   it "should return an array of files" do
@@ -107,10 +120,13 @@ end
 
 describe "A Divshare Client getting folder files" do
   include ClientSpecHelper
-  before(:each) do
+  before :all do
    common_setup
-   login_setup
-   @mock_response.should_receive(:body).and_return(get_two_files_xml)
+  end
+
+  before :each do
+    login_setup
+    @mock_response.should_receive(:body).and_return(get_two_files_xml)
   end
 
   it "should return an array of files" do
@@ -120,11 +136,15 @@ end
 
 describe "A Divshare Client, creating an upload ticket" do
   include ClientSpecHelper
-  before(:each) do
+  before :all do
     common_setup
+  end
+
+  before :each do
     login_setup
     @mock_response.should_receive(:body).and_return(get_upload_ticket_xml)
   end
+  
   it "should return an upload ticket" do
     @client.get_upload_ticket.should == '123-abcdefghijkl'
   end
@@ -132,8 +152,11 @@ end
 
 describe "A Divshare Client, logging in" do
   include ClientSpecHelper
-  before(:each) do
+  before :all do
     common_setup
+  end
+
+  before :each do
     no_login_setup
     @mock_response.should_receive(:body).and_return(successful_login_xml)
   end
@@ -155,10 +178,13 @@ describe "A DivshareClient, unsuccessfully logging in" do
   end
 end
 
-describe "A Divshare Client, logging out" do
+describe "A Divshare Client, successfully logging out" do
   include ClientSpecHelper
-  before(:each) do
+  before :all do
     common_setup
+  end
+
+  before :each do
     login_setup
     @mock_response.should_receive(:body).and_return(successful_logout_xml)
   end
@@ -166,13 +192,20 @@ describe "A Divshare Client, logging out" do
   it "should return true on successful logout" do
     @client.logout.should be_true
   end
-  
-  it "should return false on unsuccessful logout" do
-    pending "Construction of unsuccessful logout xml"
-  end
-  
+
   it "should remove api session key on logout" do
     @client.logout
     @client.session_key.should be_nil
+  end
+end
+
+describe "A Divshare Client, unsuccessfully logging out" do
+  include ClientSpecHelper
+  
+  it "should return false on unsuccessful logout" do
+    common_setup
+    login_setup
+    @mock_response.should_receive(:body).and_return(unsuccessful_logout_xml)
+    @client.logout.should be_false
   end
 end

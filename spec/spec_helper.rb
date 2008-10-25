@@ -129,6 +129,15 @@ module DivshareMockXML
     EOS
   end
   
+  def unsuccessful_logout_xml
+    <<-EOS
+    <?xml version="1.0" encoding="UTF-8"?>
+    <response status="0">
+        <logged_out>false</logged_out>
+    </response>
+    EOS
+  end
+  
   def error_xml(message)
     <<-EOS
     <?xml version="1.0" encoding="UTF-8"?>

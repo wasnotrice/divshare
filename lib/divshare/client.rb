@@ -199,12 +199,11 @@ module Divshare
         response = Net::HTTP.post_form(url, form_args).body
       rescue
         tries -= 1
-          debug "DivShare\#http_post() failed: #{tries } tries remaining"
+          debug "DivShare\#http_post() failed: #{tries} tries remaining"
         if tries > 0
           retry
         else
-          raise $!
-          # raise Divshare::ConnectionError, "Couldn't connect for '#{method}' using #{form_args.inspect}"
+          raise Divshare::ConnectionError, "Couldn't connect to #{API_URL} for '#{method}' using #{form_args.inspect}"
         end
       end
       response
