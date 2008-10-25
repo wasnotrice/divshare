@@ -45,6 +45,7 @@ describe "A new Divshare Client" do
   end
   
   it "should raise Divshare::ConnectionError on timeout" do
+    pending 'Timeout code implementation'
     lambda { @client.login('email', 'password') }.should raise_error(Divshare::ConnectionError)
   end
   
@@ -59,17 +60,16 @@ describe "A Divshare Client getting one file" do
   include ClientSpecHelper
   before(:each) do
     common_setup
-    login_setup
   end
   
   it "should return an array of one DivshareFile when requesting a file through get_files" do
-    # args = {"api_sig"=>"068a897f04bfa66fa56cf83e023fbb85", "api_key"=>"api_key", "method"=>"get_user_files", "api_session_key"=>"123-abcdefghijkl"}
-    # Net::HTTP.should_receive(:post_form).with(Divshare::Client::API_URL, args)
+    login_setup
     @mock_response.should_receive(:body).and_return(get_one_file_xml)
     @client.get_files('123456-abc').map {|f| f.class}.should == [DivshareFile]
   end
   
   it "should return a DivshareFile when requesting a file through get_file" do
+    login_setup
     @mock_response.should_receive(:body).and_return(get_one_file_xml)
     @client.get_file('123456-abc').class.should == DivshareFile
   end
@@ -103,17 +103,6 @@ describe "A Divshare Client getting user files" do
   it "should return an array of files" do
     @client.get_user_files.map {|f| f.class }.should == [DivshareFile, DivshareFile]
   end
-  
-  it "should send method and args to encoder" do
-    Encoder.should_receive(:encode).with(:get_user_files, {})
-    @client.get_user_files
-  end
-  
-  it "should send method and args, including limit and offset, to encoder" do
-    Encoder.should_receive(:encode).with(:get_user_files, {"limit" => 5, "offset" => 2})
-    @client.get_user_files(5, 2)
-  end
-  
 end
 
 describe "A Divshare Client getting folder files" do
