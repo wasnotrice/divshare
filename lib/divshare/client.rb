@@ -30,6 +30,7 @@ module Divshare
 
     def initialize(key, secret)
       @encoder = Encoder.new(key, secret)
+      @debug = true
     end
     
     def key
@@ -53,7 +54,8 @@ module Divshare
     # Returns true if logout is successful. 
     def logout
       response = send_method(:logout)
-      if response.at(:logged_out).inner_html == SUCCESS
+      debug response.to_html
+      if response[:status] == SUCCESS
         @encoder.session_key = nil
         true
       else
@@ -201,7 +203,8 @@ module Divshare
         if tries > 0
           retry
         else
-          raise Divshare::ConnectionError, "Couldn't connect for '#{method}' using #{form_args}"
+          raise $!
+          # raise Divshare::ConnectionError, "Couldn't connect for '#{method}' using #{form_args.inspect}"
         end
       end
       response
