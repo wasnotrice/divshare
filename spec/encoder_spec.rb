@@ -63,7 +63,8 @@ describe "An Encoder, after client login" do
   before(:each) do
     common_setup
     # Simulates login
-    @encoder.session_key = 'api_session_key'
+    @session_key = 'api_session_key'
+    @encoder.session_key = @session_key
   end
   
   it "should generate appropriate arguments for logout" do
@@ -85,13 +86,15 @@ describe "An Encoder, after client login" do
     excluding_sig(result).should == expected
   end
   
-  # Using string 'api_secret123-abcdefghijklfiles2734485-1fc'
-  it "should generate a correct signature" do
-    pending "More time to fix this spec"
-    api_sig = '0e1c483506dd413808c80183333e1fc2'
-    # common_setup(:stub_sign => false)
-    @encoder.sign(:logout).should == api_sig
-  end
-  
-  
+  it "should generate proper arguments for post request" do
+    method = :get_user_files
+    args = {:offset => 3, :limit => 10}
+    # api_sig is the md5 digest of 'api_secretapi_session_keylimit10offset3'
+    @encoder.encode(method, args).should == {'method' => 'get_user_files',
+                                             'api_sig' => '1bfa96cc8e92807f96f5694d641d810b',
+                                             'offset' => '3',
+                                             'limit' => '10',
+                                             'api_key' => @key,
+                                             'api_session_key' => @session_key}
+  end  
 end

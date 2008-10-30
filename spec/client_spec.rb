@@ -189,11 +189,11 @@ describe "A Divshare Client, successfully logging out" do
     @mock_response.should_receive(:body).and_return(successful_logout_xml)
   end
 
-  it "should return true on successful logout" do
+  it "should return true" do
     @client.logout.should be_true
   end
 
-  it "should remove api session key on logout" do
+  it "should remove api session key" do
     @client.logout
     @client.session_key.should be_nil
   end
@@ -202,10 +202,10 @@ end
 describe "A Divshare Client, unsuccessfully logging out" do
   include ClientSpecHelper
   
-  it "should return false on unsuccessful logout" do
+  it "should return false" do
     common_setup
     login_setup
     @mock_response.should_receive(:body).and_return(unsuccessful_logout_xml)
-    @client.logout.should be_false
+    lambda {@client.logout}.should raise_error(Divshare::APIError)
   end
 end
