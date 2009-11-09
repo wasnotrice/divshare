@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require 'spec_helper'
 require 'divshare/user'
 include Divshare
 
@@ -13,6 +13,4 @@ describe "A basic User" do
     user.name.should == 'Rob'
     user.email.should == 'support@divshare.com'
   end
-
-    
 end

@@ -30,7 +30,7 @@ module Divshare
 
     def initialize(key, secret)
       @encoder = Encoder.new(key, secret)
-      @debug = true
+      # @debug = true
     end
     
     def key
@@ -77,7 +77,6 @@ module Divshare
       file_ids = [file_ids] unless file_ids.is_a? Array
       debug "DivShare.get_files(): #{file_ids.class}"
       files = get_user_files
-      puts file_ids.class
       files.delete_if {|f| file_ids.include?(f.file_id) == false}
     end
     

@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require 'spec_helper'
 require 'divshare/client'
 require 'divshare/encoder'
 include Divshare

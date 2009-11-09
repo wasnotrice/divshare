@@ -1,6 +1,3 @@
-lib_path = File.join(File.dirname(__FILE__), '..', 'lib')
-$:.unshift(lib_path) unless $:.include?(lib_path)
-
 # From http://www.divshare.com/integrate/api
 module DivshareMockXML
   def get_user_info_xml
