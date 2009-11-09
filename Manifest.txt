@@ -8,6 +8,7 @@ config/requirements.rb
 lib/divshare.rb
 lib/divshare/client.rb
 lib/divshare/divshare_file.rb
+lib/divshare/encoder.rb
 lib/divshare/errors.rb
 lib/divshare/multipart.rb
 lib/divshare/user.rb
@@ -20,9 +21,10 @@ script/txt2html
 setup.rb
 spec/client_spec.rb
 spec/divshare_file_spec.rb
+spec/encoder_spec.rb
+spec/fixtures.yml
 spec/fixtures/divshare_mock_valid_audio.html
 spec/fixtures/divshare_mock_valid_video.html
-spec/post_args_spec.rb
 spec/spec_helper.rb
 spec/user_spec.rb
 tasks/deployment.rake
