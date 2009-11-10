@@ -19,9 +19,8 @@ begin
     gemspec.name            = "divshare"
     gemspec.description     = "A Ruby interface to the DivShare file hosting service"
     gemspec.summary         = "A Ruby interface to the DivShare file hosting service"
-    gemspec.require_paths   = ["lib"]
     gemspec.date            = Time.now.strftime("%Y-%m-%d")
-    gemspec.files           = ["README", "LICENSE", "VERSION", Dir::glob("lib/**/**")].flatten
+    gemspec.files           = ["README", "LICENSE", "VERSION", "Rakefile", Dir::glob("lib/**/**")].flatten
     gemspec.authors         = ["Eric Watson"]
     gemspec.email           = "wasnotrice@gmail.com"
     gemspec.homepage        = "http://github.com/wasnotrice/divshare"
