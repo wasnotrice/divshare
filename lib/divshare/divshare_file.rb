@@ -63,11 +63,10 @@ module Divshare
     def find_medium
       ext = @file_name ? File.extname(@file_name) : nil
       medium = case
-        when AUDIO.match(ext): "audio"
-        when VIDEO.match(ext): "video"
-        when DOCUMENT.match(ext): "document"
-        when IMAGE.match(ext): "image"
-        else nil
+        when AUDIO.match(ext) then "audio"
+        when VIDEO.match(ext) then "video"
+        when DOCUMENT.match(ext) then "document"
+        when IMAGE.match(ext) then "image"
       end
     end
     
@@ -101,10 +100,9 @@ module Divshare
     
     def image_embed_tag_template(opts={:size=>:midsize})
       size = case opts[:size]
-        when :midsize, :mid:     "midsize/"
-        when :thumb, :thumbnail: "thumb/"
-        else ""
-      end
+        when :midsize, :mid     then "midsize/"
+        when :thumb, :thumbnail then "thumb/"
+      end || ""
       tag = "http://www.divshare.com/img/#{size}[FILE ID]"
     end
   end
