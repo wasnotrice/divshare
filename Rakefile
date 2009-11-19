@@ -11,13 +11,11 @@ rescue LoadError
   puts "RSpec not available. Can't run specs without it. Install with: sudo gem install rspec"
 end
 
-task :default => :spec
-
 begin
   require "jeweler"
   Jeweler::Tasks.new do |gemspec|
     gemspec.name            = "divshare"
-    gemspec.description     = "A Ruby interface to the DivShare file hosting service"
+    gemspec.description     = File.read('README')
     gemspec.summary         = "A Ruby interface to the DivShare file hosting service"
     gemspec.date            = Time.now.strftime("%Y-%m-%d")
     gemspec.files           = ["README", "LICENSE", "VERSION", "Rakefile", Dir::glob("lib/**/**")].flatten
@@ -27,8 +25,11 @@ begin
     gemspec.rubyforge_project = "divshare"
 
     gemspec.add_dependency "hpricot"
-    gemspec.add_dependency "mime-types"
+    gemspec.add_dependency "mime-types", ">= 1.16"
   end
 rescue LoadError
   puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
 end
+
+task :default => :spec
+task :build => :spec
