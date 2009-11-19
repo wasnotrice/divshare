@@ -2,7 +2,7 @@
 # http://pivots.pivotallabs.com/users/damon/blog/articles/227-standup-04-27-07-testing-file-uploads
 
 require 'net/https'
-require "mime/types" # Requires gem install mime-types
+require "mime/types" # To use this library as a gem: gem install mime-types
 
 module Net #:nodoc:all
   class HTTP::Post

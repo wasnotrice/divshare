@@ -5,7 +5,7 @@ begin
     t.spec_files = FileList['spec/**/*_spec.rb']
     t.libs = ['spec', 'lib']
     t.spec_opts = ["-c", "-f s"]
-    t.ruby_opts = ["-r rubygems"] # If you want to use rubygems for requires
+    t.ruby_opts = ["-r rubygems"] # Remove to require dependencies another way
   end
 rescue LoadError
   puts "RSpec not available. Can't run specs without it. Install with: sudo gem install rspec"

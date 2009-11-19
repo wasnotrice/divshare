@@ -22,13 +22,22 @@ module ClientSpecHelper
     @client = Client.new(@api_key, @api_secret)
   end
   
-  def login_setup
+  def login_setup(opts={})
     @mock_response = mock('response')
     @mock_login_response = mock('login_response')
-    Net::HTTP.should_receive(:post_form).twice.and_return(@mock_login_response, @mock_response)   
+    Net::HTTP.should_receive(:post_form).twice.and_return(@mock_login_response, @mock_response)
     @mock_login_response.should_receive(:body).and_return(successful_login_xml)
+    _extra_upload_setup if opts[:request_type] == :upload
     @client = Client.new(@api_key, @api_secret)
     @client.login(@user_email, @password)
+  end
+
+  private
+  def _extra_upload_setup
+    @mock_http = mock('http')
+    Net::HTTP.should_receive(:new).and_return(@mock_http)
+    @mock_http.should_receive(:read_timeout=)
+    @mock_http.should_receive(:request).and_return({'location' => "http://any.old.url/?file1=123-abcdefghijkl"})
   end
 end
 
@@ -209,3 +218,24 @@ describe "A Divshare Client, unsuccessfully logging out" do
     lambda {@client.logout}.should raise_error(Divshare::APIError)
   end
 end
+
+describe "A Divshare Client, uploading a file" do
+  include ClientSpecHelper
+  
+  before :all do
+    common_setup
+  end
+  
+  before :each do 
+    login_setup(:request_type => :upload)
+    @mock_response.should_receive(:body).and_return(get_upload_ticket_xml)
+  end
+  
+  it "should upload an image file" do
+    ticket = @client.get_upload_ticket
+    filepath = File.expand_path(File.join(File.dirname(__FILE__), 'fixtures/divshare_logo.png'))
+    @client.upload(ticket, filepath).should == '123-abcdefghijkl'
+  end
+end
+  
+  
