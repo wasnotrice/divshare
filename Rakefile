@@ -15,7 +15,7 @@ begin
   require "jeweler"
   Jeweler::Tasks.new do |gemspec|
     gemspec.name            = "divshare"
-    gemspec.description     = File.read('README')
+    gemspec.description     = "Makes it easy to use the DivShare API in Ruby"
     gemspec.summary         = "A Ruby interface to the DivShare file hosting service"
     gemspec.date            = Time.now.strftime("%Y-%m-%d")
     gemspec.files           = ["README", "LICENSE", "VERSION", "Rakefile", Dir::glob("lib/**/**")].flatten
